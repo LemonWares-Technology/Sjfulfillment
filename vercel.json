@@ -1,0 +1,18 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && npm run build",
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    },
+    "app/api/upload/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "build": {
+    "env": {
+      "PRISMA_GENERATE_SKIP_AUTOINSTALL": "true"
+    }
+  }
+}
+

@@ -1,0 +1,12 @@
+Product Name,Description,Category,Unit Price,Weight,Length,Width,Height,Initial Stock,Reorder Point,SKU
+iPhone 15 Pro,Latest iPhone with advanced features and titanium design,Electronics,150000,200,15,7,0.8,50,10,IPHONE15PRO
+Samsung Galaxy S24,High-end Android smartphone with AI features,Electronics,120000,180,16,7.5,0.8,30,5,SAMSUNG24
+MacBook Air M3,Lightweight laptop for professionals,Electronics,800000,1200,30,21,1.5,20,3,MACBOOKAIR
+Nike Air Max,Comfortable running shoes with air cushioning,Footwear,25000,300,30,12,10,100,20,NIKEAIRMAX
+Adidas Ultraboost,Premium running shoes with boost technology,Footwear,30000,350,31,13,11,80,15,ADIDASUB
+Sony WH-1000XM5,Noise-cancelling wireless headphones,Electronics,180000,250,20,18,8,25,5,SONYWH1000XM5
+Dell XPS 13,Ultra-thin laptop with premium build,Electronics,750000,1100,29,20,1.4,15,3,DELLXPS13
+Canon EOS R6,Professional mirrorless camera,Electronics,450000,650,13,9,8,10,2,CANONEOSR6
+Nike Dri-FIT T-Shirt,Moisture-wicking athletic t-shirt,Clothing,15000,150,25,20,1,200,30,NIKEDRIFIT
+Levi's 501 Jeans,Classic straight-leg denim jeans,Clothing,35000,500,30,25,1,150,25,LEVIS501
+
