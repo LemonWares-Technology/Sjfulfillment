@@ -119,9 +119,8 @@ export const DELETE = withRole(['SJFS_ADMIN'], async (request: NextRequest, user
     }
 
     // Soft delete by changing status
-    await prisma.logisticsPartner.update({
+    await prisma.logisticsPartner.delete({
       where: { id: partnerId },
-      data: { status: 'SUSPENDED' }
     })
 
     // Log the change

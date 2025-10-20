@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 import { createResponse, createErrorResponse } from '../../../lib/api-utils'
 import { randomBytes } from 'crypto'
+import { sendPasswordResetEmail } from '../../../lib/email'
 
 // POST /api/auth/forgot-password
 export const POST = async (request: NextRequest) => {
@@ -46,10 +47,14 @@ export const POST = async (request: NextRequest) => {
       }
     })
 
-    // TODO: Send email with reset link
-    // For now, we'll just log the token (in production, send email)
-    console.log(`Password reset token for ${user.email}: ${resetToken}`)
-    console.log(`Reset link: ${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`)
+    // Send password reset email
+    sendPasswordResetEmail({
+      to: user.email,
+      firstName: user.firstName || undefined,
+      resetToken
+    }).catch(err => {
+      console.error('Failed to send password reset email:', err)
+    })
 
     return createResponse(
       { 

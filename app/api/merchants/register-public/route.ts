@@ -3,6 +3,7 @@ import { createErrorResponse, createResponse } from '@/app/lib/api-utils'
 import { prisma } from '@/app/lib/prisma'
 import { createMerchantSchema } from '@/app/lib/validations'
 import { hashPassword } from '@/app/lib/password'
+import { sendWelcomeMerchantEmail } from '@/app/lib/email'
 
 // POST /api/merchants/register-public
 // Public endpoint for merchants to register themselves
@@ -106,6 +107,17 @@ export async function POST(request: NextRequest) {
           user: { ...userData, password: '[HIDDEN]' }
         }
       }
+    })
+
+    // Send welcome email with login credentials
+    sendWelcomeMerchantEmail({
+      to: result.user.email,
+      businessName: result.merchant.businessName,
+      firstName: result.user.firstName || undefined,
+      email: result.user.email,
+      password: userData.password // Original unhashed password
+    }).catch(err => {
+      console.error('Failed to send welcome email to merchant:', err)
     })
 
     return createResponse({

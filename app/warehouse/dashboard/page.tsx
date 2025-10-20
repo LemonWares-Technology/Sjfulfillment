@@ -65,30 +65,31 @@ export default function WarehouseDashboard() {
 
   return (
     <DashboardLayout userRole="WAREHOUSE_STAFF">
-      <div className="px-4 py-6 sm:px-0">
+      <div className="px-4 py-6 sm:px-0 bg-black/30 min-h-screen">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Warehouse Dashboard</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-[#f08c17] drop-shadow">Warehouse Dashboard</h1>
+          <p className="mt-2 text-white/80">
             Welcome back, {user?.firstName}! Here's your warehouse overview.
           </p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          {/* Card 1 */}
+          <div className="bg-white/10 backdrop-blur border border-white/20 shadow rounded-[5px]">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-amber-600 rounded-md flex items-center justify-center">
+                  <div className="w-8 h-8 bg-amber-600 rounded-[5px] flex items-center justify-center">
                     <span className="text-white text-sm font-medium">📦</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-white/70 truncate">
                       Total Inventory
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-bold text-white">
                       {stats?.totalInventory || 0}
                     </dd>
                   </dl>
@@ -97,20 +98,21 @@ export default function WarehouseDashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          {/* Card 2 */}
+          <div className="bg-white/10 backdrop-blur border border-white/20 shadow rounded-[5px]">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
+                  <div className="w-8 h-8 bg-red-500 rounded-[5px] flex items-center justify-center">
                     <span className="text-white text-sm font-medium">⚠</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-white/70 truncate">
                       Low Stock Items
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-bold text-white">
                       {stats?.lowStockItems || 0}
                     </dd>
                   </dl>
@@ -119,20 +121,21 @@ export default function WarehouseDashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          {/* Card 3 */}
+          <div className="bg-white/10 backdrop-blur border border-white/20 shadow rounded-[5px]">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                  <div className="w-8 h-8 bg-yellow-500 rounded-[5px] flex items-center justify-center">
                     <span className="text-white text-sm font-medium">📋</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-white/70 truncate">
                       Pending Orders
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-bold text-white">
                       {stats?.pendingOrders || 0}
                     </dd>
                   </dl>
@@ -144,72 +147,72 @@ export default function WarehouseDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <div className="bg-white/10 backdrop-blur border border-white/20 shadow rounded-[5px] p-6">
+            <h3 className="text-lg font-bold text-[#f08c17] mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-4">
               <button 
                 onClick={() => handleQuickAction('manage-inventory')}
-                className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
+                className="p-4 border-2 border-dashed border-white/30 rounded-[5px] hover:border-blue-400 hover:bg-blue-900/30 transition-colors cursor-pointer"
               >
                 <div className="text-center">
-                  <div className="text-blue-600 text-2xl mb-2">📦</div>
-                  <div className="text-sm font-medium text-gray-900">Manage Inventory</div>
+                  <div className="text-blue-400 text-2xl mb-2">📦</div>
+                  <div className="text-sm font-bold text-white">Manage Inventory</div>
                 </div>
               </button>
               <button 
                 onClick={() => handleQuickAction('process-orders')}
-                className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors cursor-pointer"
+                className="p-4 border-2 border-dashed border-white/30 rounded-[5px] hover:border-green-400 hover:bg-green-900/30 transition-colors cursor-pointer"
               >
                 <div className="text-center">
-                  <div className="text-green-600 text-2xl mb-2">📋</div>
-                  <div className="text-sm font-medium text-gray-900">Process Orders</div>
+                  <div className="text-green-400 text-2xl mb-2">📋</div>
+                  <div className="text-sm font-bold text-white">Process Orders</div>
                 </div>
               </button>
               <button 
                 onClick={() => handleQuickAction('stock-reports')}
-                className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors cursor-pointer"
+                className="p-4 border-2 border-dashed border-white/30 rounded-[5px] hover:border-yellow-400 hover:bg-yellow-900/30 transition-colors cursor-pointer"
               >
                 <div className="text-center">
-                  <div className="text-yellow-600 text-2xl mb-2">📊</div>
-                  <div className="text-sm font-medium text-gray-900">Stock Reports</div>
+                  <div className="text-yellow-400 text-2xl mb-2">📊</div>
+                  <div className="text-sm font-bold text-white">Stock Reports</div>
                 </div>
               </button>
               <button 
                 onClick={() => handleQuickAction('warehouse-zones')}
-                className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors cursor-pointer"
+                className="p-4 border-2 border-dashed border-white/30 rounded-[5px] hover:border-purple-400 hover:bg-purple-900/30 transition-colors cursor-pointer"
               >
                 <div className="text-center">
-                  <div className="text-purple-600 text-2xl mb-2">🏭</div>
-                  <div className="text-sm font-medium text-gray-900">Warehouse Zones</div>
+                  <div className="text-purple-400 text-2xl mb-2">🏭</div>
+                  <div className="text-sm font-bold text-white">Warehouse Zones</div>
                 </div>
               </button>
             </div>
           </div>
 
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Orders</h3>
+          <div className="bg-white/10 backdrop-blur border border-white/20 shadow rounded-[5px] p-6">
+            <h3 className="text-lg font-bold text-[#f08c17] mb-4">Recent Orders</h3>
             <div className="space-y-3">
               {stats?.recentOrders?.slice(0, 5).map((order) => (
-                <div key={order.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                <div key={order.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-bold text-white">
                       {order.orderNumber}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-white/70">
                       {order.merchant?.businessName}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-bold text-white">
                       {formatCurrency(order.totalAmount)}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-white/70">
                       {formatDate(order.createdAt)}
                     </div>
                   </div>
                 </div>
               )) || (
-                <div className="text-center text-gray-500 py-4">
+                <div className="text-center text-white/60 py-4">
                   No recent orders
                 </div>
               )}

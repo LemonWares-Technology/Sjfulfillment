@@ -5,6 +5,7 @@ import { createErrorResponse, createResponse, withRole } from '@/app/lib/api-uti
 import { prisma } from '@/app/lib/prisma'
 import { createUserSchema } from '@/app/lib/validations'
 import { hashPassword } from '@/app/lib/password'
+import { sendWelcomeStaffEmail } from '@/app/lib/email'
 
 // GET /api/users
 export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: NextRequest, user: JWTPayload) => {
@@ -143,6 +144,17 @@ export const POST = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: N
         merchantId: true,
         createdAt: true
       }
+    })
+
+    // Send welcome email to staff member
+    sendWelcomeStaffEmail({
+      to: newUser.email,
+      firstName: newUser.firstName || undefined,
+      role: newUser.role,
+      email: newUser.email,
+      password: userData.password // Original unhashed password
+    }).catch(err => {
+      console.error('Failed to send welcome email to staff:', err)
     })
 
     return createResponse(newUser, 201, 'User created successfully')

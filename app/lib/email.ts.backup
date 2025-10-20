@@ -1,0 +1,95 @@
+// Email utility using Nodemailer (SMTP)
+// Configure these env vars in your deployment:
+// - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+// - EMAIL_FROM: Sender, e.g. "SJFulfillment <no-reply@sjfulfillment.com>"
+// - NEXT_PUBLIC_APP_URL or APP_BASE_URL: e.g. https://sjfulfillment.com
+
+import nodemailer from 'nodemailer'
+
+type SendEmailParams = {
+  to: string | string[]
+  subject: string
+  html: string
+}
+
+function getTransport() {
+  const host = process.env.SMTP_HOST
+  const portStr = process.env.SMTP_PORT
+  const secureEnv = process.env.SMTP_SECURE
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+
+  const port = portStr ? parseInt(portStr, 10) : 587
+  const secure = typeof secureEnv === 'string' ? secureEnv.toLowerCase() === 'true' : (port === 465) // true for 465, false otherwise unless overridden
+
+  if (!host || !user || !pass) {
+    console.warn('SMTP env vars not fully set; skipping email send')
+    return null
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass }
+  })
+}
+
+export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<void> {
+  const transporter = getTransport()
+  const from = process.env.EMAIL_FROM || 'SJFulfillment <no-reply@sjfulfillment.com>'
+
+  if (!transporter) return
+
+  try {
+    await transporter.sendMail({ from, to, subject, html })
+  } catch (err) {
+    console.error('Error sending email via SMTP (nodemailer):', err)
+  }
+}
+
+export async function sendWelcomePartnerEmail(params: {
+  to: string
+  partnerName?: string
+  companyName?: string
+  email: string
+  password: string
+}): Promise<void> {
+  const { to, partnerName, companyName, email, password } = params
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
+  const loginUrl = `${baseUrl}/welcome`
+
+  const displayName = partnerName || companyName || 'there'
+
+  const subject = 'Your SJFulfillment Logistics Partner Account'
+  const html = `
+  <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.6;">
+    <div style="text-align:center; margin-bottom: 16px;">
+      <img src="https://sjfulfillment.com/wp-content/uploads/2020/09/cropped-Main-Logo-white-886x.png" alt="SJFulfillment" height="60" style="max-width:150px; height:auto;"/>
+    </div>
+    <h2 style="color:#f08c17; margin:0 0 8px;">Welcome to SJFulfillment</h2>
+    <p>Hi ${escapeHtml(displayName)},</p>
+    <p>Your logistics partner account has been created. Here are your login details:</p>
+    <div style="background:#fff3e6; border:1px solid #ffd9b3; border-radius:6px; padding:12px; margin:12px 0;">
+      <p style="margin:6px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+      <p style="margin:6px 0;"><strong>Temporary Password:</strong> ${escapeHtml(password)}</p>
+    </div>
+    <p>You can sign in here:</p>
+    <p>
+      <a href="${loginUrl}" style="background:#f08c17; color:#fff; padding:10px 16px; border-radius:6px; text-decoration:none; display:inline-block;">Go to Login</a>
+    </p>
+    <p>For security, we recommend changing your password after your first login.</p>
+    <p style="color:#666; font-size:12px;">If you didn’t request this, please ignore this email.</p>
+  </div>`
+
+  await sendEmail({ to, subject, html })
+}
+
+function escapeHtml(input: string) {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}

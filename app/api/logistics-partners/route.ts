@@ -4,6 +4,7 @@ import { createErrorResponse, createResponse, withRole } from '@/app/lib/api-uti
 import { prisma } from '@/app/lib/prisma'
 import { createLogisticsPartnerSchema } from '@/app/lib/validations'
 import { hashPassword } from '@/app/lib/password'
+import { sendWelcomePartnerEmail } from '@/app/lib/email'
 
 // GET /api/logistics-partners
 export const GET = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF', 'MERCHANT_ADMIN', 'MERCHANT_STAFF'], async (request: NextRequest, user: JWTPayload) => {
@@ -172,7 +173,7 @@ export const POST = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: 
       timeout: 10000 // Increase timeout to 10 seconds
     })
 
-    const { newPartner } = result
+  const { newPartner } = result
 
     // Log the creation
     await prisma.auditLog.create({
@@ -184,6 +185,16 @@ export const POST = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: 
         newValues: partnerData
       }
     })
+
+    // Send welcome email asynchronously (no need to block the response)
+    // Includes login instructions using the provided email and temporary password
+    sendWelcomePartnerEmail({
+      to: partnerData.email,
+      partnerName: partnerData.contactPerson,
+      companyName: partnerData.companyName,
+      email: partnerData.email,
+      password: partnerData.password
+    }).catch((err) => console.error('Failed to send partner welcome email:', err))
 
     return createResponse(
       newPartner,
