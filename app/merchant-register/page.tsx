@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApi } from '@/app/lib/use-api'
 import { BuildingOfficeIcon, UserIcon, LockClosedIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
+import { NIGERIA_STATES } from '@/app/data/nigeria-states'
 
 interface MerchantData {
   businessName: string
@@ -55,6 +56,25 @@ export default function MerchantRegistrationPage() {
     confirmPassword: ''
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+
+  // Prefill step 2 with step 1 details where sensible
+  useEffect(() => {
+    // When merchantData.contactPerson is provided, split into first/last name if userData empty
+    if (currentStep === 2) {
+      if (!userData.firstName && merchantData.contactPerson) {
+        const parts = merchantData.contactPerson.trim().split(/\s+/)
+        const firstName = parts[0] || ''
+        const lastName = parts.slice(1).join(' ') || ''
+        setUserData((prev) => ({ ...prev, firstName, lastName }))
+      }
+      // Use businessEmail and businessPhone as defaults if user email/phone are empty
+      setUserData((prev) => ({
+        ...prev,
+        email: prev.email || merchantData.businessEmail,
+        phone: prev.phone || merchantData.businessPhone,
+      }))
+    }
+  }, [currentStep])
 
   const validateStep1 = () => {
     const newErrors: { [key: string]: string } = {}
@@ -290,14 +310,17 @@ export default function MerchantRegistrationPage() {
                   <label className="block text-sm font-medium text-gray-200 mb-1">
                     State *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={merchantData.state}
                     onChange={(e) => setMerchantData({ ...merchantData, state: e.target.value })}
                     className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.state ? 'border-red-500' : 'border-gray-300'
                       }`}
-                    placeholder="State"
-                  />
+                  >
+                    <option value="">Select state</option>
+                    {NIGERIA_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                   {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
                 </div>
 
@@ -345,6 +368,8 @@ export default function MerchantRegistrationPage() {
                 <UserIcon className="h-6 w-6 mr-2 text-amber-600" />
                 Account Setup
               </h2>
+
+              <p className="text-xs text-gray-300 mb-4">We prefilled your details from Business Information where possible. You can edit them here.</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

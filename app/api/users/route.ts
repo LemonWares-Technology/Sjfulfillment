@@ -146,7 +146,7 @@ export const POST = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: N
       }
     })
 
-    // Send welcome email to staff member
+    // Send welcome email to staff member with login credentials
     sendWelcomeStaffEmail({
       to: newUser.email,
       firstName: newUser.firstName || undefined,

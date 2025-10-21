@@ -36,11 +36,28 @@ export async function POST(request: NextRequest) {
           { businessEmail: merchantData.businessEmail },
           ...(merchantData.cacNumber ? [{ cacNumber: merchantData.cacNumber }] : [])
         ]
+      },
+      select: {
+        id: true,
+        businessEmail: true,
+        cacNumber: true,
+        businessName: true,
+        isActive: true
       }
     })
 
     if (existingMerchant) {
-      return createErrorResponse('Merchant with this email or CAC number already exists', 400)
+      console.error('Merchant already exists:', {
+        id: existingMerchant.id,
+        email: existingMerchant.businessEmail,
+        cacNumber: existingMerchant.cacNumber,
+        businessName: existingMerchant.businessName,
+        isActive: existingMerchant.isActive
+      })
+      return createErrorResponse(
+        `Merchant with this email${merchantData.cacNumber ? ' or CAC number' : ''} already exists. If you recently deleted this merchant, the data may not be fully purged yet.`, 
+        400
+      )
     }
 
     // Check if user already exists
@@ -50,11 +67,26 @@ export async function POST(request: NextRequest) {
           { email: userData.email },
           ...(userData.phone ? [{ phone: userData.phone }] : [])
         ]
+      },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isActive: true
       }
     })
 
     if (existingUser) {
-      return createErrorResponse('User with this email or phone already exists', 400)
+      console.error('User already exists:', {
+        id: existingUser.id,
+        email: existingUser.email,
+        phone: existingUser.phone,
+        isActive: existingUser.isActive
+      })
+      return createErrorResponse(
+        'User with this email or phone already exists. If you recently deleted this user, the data may not be fully purged yet.',
+        400
+      )
     }
 
     // Hash password
@@ -109,13 +141,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Send welcome email with login credentials
+    // Send welcome email (without password for security)
     sendWelcomeMerchantEmail({
       to: result.user.email,
       businessName: result.merchant.businessName,
       firstName: result.user.firstName || undefined,
-      email: result.user.email,
-      password: userData.password // Original unhashed password
+      email: result.user.email
     }).catch(err => {
       console.error('Failed to send welcome email to merchant:', err)
     })

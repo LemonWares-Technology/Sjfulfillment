@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import SearchBar from '@/app/components/search-bar'
 import FilterSelect from '@/app/components/filter-select'
 import ServiceGate from '@/app/components/service-gate'
+import ServiceGateGroup from '@/app/components/service-gate-group'
 import OrderModal from '@/app/components/order-modal'
 import CustomerCallButton from '@/app/components/customer-call-button'
 import BulkOrderUpload from '@/app/components/bulk-order-upload'
@@ -58,6 +59,35 @@ export default function OrdersPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage] = useState(10)
+  const [hasReturnsManagement, setHasReturnsManagement] = useState(false)
+
+  // Check for Returns Management service subscription
+  useEffect(() => {
+    const checkReturnsService = async () => {
+      if (!user) return
+      
+      // SJFS_ADMIN and WAREHOUSE_STAFF always have access
+      if (user.role === 'SJFS_ADMIN' || user.role === 'WAREHOUSE_STAFF') {
+        setHasReturnsManagement(true)
+        return
+      }
+
+      try {
+        const response = await get<{subscriptions: Array<{service: {name: string}, isActive: boolean}>}>('/api/merchant-services/status', { silent: true })
+        if (response?.subscriptions) {
+          const hasService = response.subscriptions.some(
+            sub => sub.service.name === 'Returns Management' && sub.isActive
+          )
+          setHasReturnsManagement(hasService)
+        }
+      } catch (error) {
+        console.error('Failed to check Returns Management service:', error)
+        setHasReturnsManagement(false)
+      }
+    }
+
+    checkReturnsService()
+  }, [user, get])
 
   useEffect(() => {
     fetchOrders()
@@ -204,7 +234,10 @@ export default function OrdersPage() {
             </div>
             <div>
               <div className="flex space-x-3">
-                <ServiceGate serviceName="Order Processing">
+                <ServiceGateGroup 
+                  serviceName="Order Processing"
+                  buttonLabel="Subscribe to access Order Management"
+                >
                   <button
                     onClick={() => setShowOrderModal(true)}
                     className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white px-4 py-2 rounded-[5px] flex items-center"
@@ -212,9 +245,6 @@ export default function OrdersPage() {
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Create Order
                   </button>
-                </ServiceGate>
-                
-                <ServiceGate serviceName="Order Processing">
                   <button
                     onClick={() => setShowBulkUpload(true)}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-[5px] flex items-center"
@@ -222,7 +252,7 @@ export default function OrdersPage() {
                     <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
                     Bulk Upload
                   </button>
-                </ServiceGate>
+                </ServiceGateGroup>
               </div>
             </div>
           </div>
@@ -344,7 +374,7 @@ export default function OrdersPage() {
                           >
                             <DocumentTextIcon className="h-4 w-4" />
                           </button>
-                          {(user?.role === 'MERCHANT_ADMIN' || user?.role === 'MERCHANT_STAFF') && (
+                          {(user?.role === 'MERCHANT_ADMIN' || user?.role === 'MERCHANT_STAFF') && hasReturnsManagement && (
                             <>
                               <button 
                                 onClick={() => handleRequestRefund(order)}

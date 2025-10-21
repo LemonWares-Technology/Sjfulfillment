@@ -8,6 +8,8 @@ import { formatDate } from '@/app/lib/utils'
 import { PlusIcon, PencilIcon, TrashIcon, UserIcon, EyeIcon } from '@heroicons/react/24/outline'
 import SearchBar from '@/app/components/search-bar'
 import FilterSelect from '@/app/components/filter-select'
+import ConfirmDeleteModal from '@/app/components/confirm-delete-modal'
+import toast from 'react-hot-toast'
 
 interface StaffMember {
   id: string
@@ -45,6 +47,8 @@ export default function AdminStaffPage() {
   const [merchantFilter, setMerchantFilter] = useState('ALL')
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [staffToDelete, setStaffToDelete] = useState<StaffMember | null>(null)
   const [newStaffData, setNewStaffData] = useState<NewStaffData>({
     firstName: '',
     lastName: '',
@@ -125,14 +129,41 @@ export default function AdminStaffPage() {
     }
   }
 
-  const handleDeactivateStaff = async (staffId: string) => {
-    if (confirm('Are you sure you want to deactivate this staff member?')) {
-      try {
-        await deleteStaff(`/api/users/${staffId}`)
-        fetchStaff()
-      } catch (error) {
-        console.error('Failed to deactivate staff member:', error)
+  const handleDeleteStaffClick = (member: StaffMember) => {
+    setStaffToDelete(member)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteStaffConfirm = async (adminPassword?: string) => {
+    if (!staffToDelete) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/users/${staffToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
+        body: JSON.stringify({ adminPassword })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        const errorMessage = data.error || data.message || 'Failed to delete user account'
+        toast.error(errorMessage, { duration: 5000 })
+        throw new Error(errorMessage)
       }
+
+      toast.success(`User ${staffToDelete.email} permanently deleted`)
+      setShowDeleteModal(false)
+      setStaffToDelete(null)
+      fetchStaff()
+    } catch (error: any) {
+      if (!error.message?.includes('delete')) {
+        toast.error('Network error. Please check your connection and try again.')
+      }
+      throw error
     }
   }
 
@@ -279,7 +310,7 @@ export default function AdminStaffPage() {
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           {member.id !== user?.id && (
-                            <button onClick={() => handleDeactivateStaff(member.id)} className="text-white hover:text-red-900" title="Deactivate Staff Member">
+                            <button onClick={() => handleDeleteStaffClick(member)} className="text-white hover:text-red-900" title="Delete Staff Member">
                               <TrashIcon className="h-4 w-4" />
                             </button>
                           )}
@@ -335,6 +366,23 @@ export default function AdminStaffPage() {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmDeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false)
+            setStaffToDelete(null)
+          }}
+          onConfirm={handleDeleteStaffConfirm}
+          title="Delete User Account"
+          description={`Are you sure you want to permanently delete ${staffToDelete?.firstName} ${staffToDelete?.lastName} (${staffToDelete?.email})? This action is permanent and cannot be undone. All associated data will be permanently removed.`}
+          confirmLabel="Delete User"
+          confirmPlaceholder="Type DELETE to confirm"
+          expectedText="DELETE"
+          requirePassword
+          passwordLabel="Enter your admin password"
+        />
       </div>
     </DashboardLayout>
   )

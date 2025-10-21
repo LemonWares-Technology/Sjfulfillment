@@ -13,6 +13,7 @@ import BulkOperationsModal from "@/app/components/bulk-operations-modal";
 import BulkProductUpload from "@/app/components/bulk-product-upload";
 import ExportModal from "@/app/components/export-modal";
 import ServiceGate from "@/app/components/service-gate";
+import ServiceGateGroup from "@/app/components/service-gate-group";
 import Pagination from "@/app/components/pagination";
 import Image from "next/image";
 
@@ -217,22 +218,34 @@ export default function ProductsPage() {
               <p className="mt-2 text-white">Manage your product catalog</p>
             </div>
             <div className="flex space-x-3">
-              {selectedProducts.length > 0 && (
+              <ServiceGateGroup 
+                serviceName="Inventory Management" 
+                buttonLabel="Subscribe to access Products API"
+              >
+                {selectedProducts.length > 0 && (
+                  <button
+                    onClick={handleBulkOperation}
+                    className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white px-4 py-2 rounded-[5px] flex items-center"
+                  >
+                    <CheckIcon className="h-5 w-5 mr-2" />
+                    Bulk Actions ({selectedProducts.length})
+                  </button>
+                )}
                 <button
-                  onClick={handleBulkOperation}
+                  onClick={() => setShowBulkUpload(true)}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-[5px] flex items-center"
+                >
+                  <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
+                  Bulk Upload
+                </button>
+                <button
+                  onClick={handleAddProduct}
                   className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white px-4 py-2 rounded-[5px] flex items-center"
                 >
-                  <CheckIcon className="h-5 w-5 mr-2" />
-                  Bulk Actions ({selectedProducts.length})
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Add Product
                 </button>
-              )}
-              <button
-                onClick={() => setShowBulkUpload(true)}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-[5px] flex items-center"
-              >
-                <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
-                Bulk Upload
-              </button>
+              </ServiceGateGroup>
               <button
                 onClick={() => fetchProducts(1)}
                 className="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-[5px] flex items-center"
@@ -249,15 +262,6 @@ export default function ProductsPage() {
                 <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
                 Export
               </button>
-              <ServiceGate serviceName="Inventory Management">
-                <button
-                  onClick={handleAddProduct}
-                  className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white px-4 py-2 rounded-[5px] flex items-center"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Add Product
-                </button>
-              </ServiceGate>
             </div>
           </div>
         </div>

@@ -74,7 +74,7 @@ export default function ReturnDetailsPage() {
   const { get, put, loading } = useApi()
   const router = useRouter()
   const params = useParams()
-  const returnId = params.id as string
+  const returnId = params?.id as string
 
   const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null)
   const [selectedStatus, setSelectedStatus] = useState('')

@@ -4,6 +4,8 @@ import { useAuth } from '@/app/lib/auth-context'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import NotificationBell from './notification-bell'
+import { useApi } from '@/app/lib/use-api'
+import { useEffect, useState } from 'react'
 import {
   HomeIcon,
   BuildingStorefrontIcon,
@@ -18,7 +20,6 @@ import {
   ArrowPathIcon,
   DocumentTextIcon,
   ChartBarIcon,
-  ChatBubbleLeftRightIcon,
   ArrowUturnLeftIcon
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
@@ -28,6 +29,7 @@ interface NavigationItem {
   href: string
   icon: React.ComponentType<{ className?: string }>
   roles: string[]
+  requiresService?: string // Optional: service name required for this nav item
 }
 
 const navigationItems: NavigationItem[] = [
@@ -59,7 +61,8 @@ const navigationItems: NavigationItem[] = [
     name: 'Refund Requests',
     href: '/refund-requests',
     icon: ArrowUturnLeftIcon,
-    roles: ['SJFS_ADMIN', 'WAREHOUSE_STAFF']
+    roles: ['SJFS_ADMIN', 'WAREHOUSE_STAFF'],
+    requiresService: 'Returns Management'
   },
   {
     name: 'Warehouses',
@@ -119,7 +122,8 @@ const navigationItems: NavigationItem[] = [
     name: 'Returns',
     href: '/returns',
     icon: ArrowPathIcon,
-    roles: ['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF', 'WAREHOUSE_STAFF']
+    roles: ['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF', 'WAREHOUSE_STAFF'],
+    requiresService: 'Returns Management'
   },
   {
     name: 'Staff',
@@ -144,24 +148,65 @@ const navigationItems: NavigationItem[] = [
     href: '/settings',
     icon: CogIcon,
     roles: ['SJFS_ADMIN', 'MERCHANT_ADMIN']
-  },
-  {
-    name: 'Telegram',
-    href: '/auth/telegram-register',
-    icon: ChatBubbleLeftRightIcon,
-    roles: ['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF', 'WAREHOUSE_STAFF']
   }
 ]
 
 export default function Sidebar() {
   const { user } = useAuth()
   const pathname = usePathname()
+  const { get } = useApi()
+  const [subscribedServices, setSubscribedServices] = useState<string[]>([])
+  const [servicesLoaded, setServicesLoaded] = useState(false)
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      if (!user) return
+      
+      // SJFS_ADMIN and WAREHOUSE_STAFF have access to all services
+      if (user.role === 'SJFS_ADMIN' || user.role === 'WAREHOUSE_STAFF') {
+        setSubscribedServices(['Returns Management']) // Add other services as needed
+        setServicesLoaded(true)
+        return
+      }
+
+      try {
+        const response = await get<{subscriptions: Array<{service: {name: string}, isActive: boolean}>}>('/api/merchant-services/status', { silent: true })
+        if (response?.subscriptions) {
+          const activeServices = response.subscriptions
+            .filter(sub => sub.isActive)
+            .map(sub => sub.service.name)
+          setSubscribedServices(activeServices)
+        }
+      } catch (error) {
+        console.error('Failed to fetch service subscriptions:', error)
+      } finally {
+        setServicesLoaded(true)
+      }
+    }
+
+    fetchServices()
+  }, [user, get])
 
   if (!user) return null
 
-  const filteredItems = navigationItems.filter(item =>
-    item.roles.includes(user.role)
-  )
+  // Filter items based on role and service subscription
+  const filteredItems = navigationItems.filter(item => {
+    // Check if user's role is allowed
+    if (!item.roles.includes(user.role)) {
+      return false
+    }
+
+    // If item requires a service subscription, check if user has it
+    if (item.requiresService && servicesLoaded) {
+      // SJFS_ADMIN and WAREHOUSE_STAFF bypass service checks
+      if (user.role === 'SJFS_ADMIN' || user.role === 'WAREHOUSE_STAFF') {
+        return true
+      }
+      return subscribedServices.includes(item.requiresService)
+    }
+
+    return true
+  })
 
   const getDashboardHref = () => {
     switch (user.role) {

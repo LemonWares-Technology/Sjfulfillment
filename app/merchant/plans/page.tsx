@@ -3,16 +3,14 @@
 import { useAuth } from '@/app/lib/auth-context'
 import DashboardLayout from '@/app/components/dashboard-layout'
 import { useApi } from '@/app/lib/use-api'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { formatCurrency, formatDate } from '@/app/lib/utils'
+import { useSearchParams } from 'next/navigation'
 import { 
   CheckIcon, 
   XMarkIcon, 
-  PlusIcon, 
-  MinusIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  ArrowUpIcon
 } from '@heroicons/react/24/outline'
 
 interface Service {
@@ -38,7 +36,6 @@ interface MerchantServiceSubscription {
 
 interface SelectedService {
   serviceId: string
-  quantity: number
   price: number
 }
 
@@ -49,23 +46,80 @@ interface PlanUpdateStatus {
   hoursRemaining: number
 }
 
+/**
+ * Plan Management Page
+ * 
+ * This page allows merchants to manage their service subscriptions within the dashboard.
+ * 
+ * Key Features:
+ * - View all available services organized by category
+ * - Add/remove services from their subscription plan (simple on/off toggle)
+ * - See real-time cost calculations (current vs. new plan)
+ * - 24-hour update restriction to prevent frequent changes
+ * 
+ * Navigation & Highlighting:
+ * When users click "Subscribe to {service}" from ServiceGate component,
+ * they are redirected here with a query parameter: ?service={serviceName}
+ * The page then:
+ * 1. Highlights the requested service with a red pulsing border
+ * 2. Automatically scrolls it into view
+ * 3. Clears the highlight after 3 seconds
+ * 
+ * This provides seamless navigation from gated features to the subscription page.
+ */
+
 export default function PlanManagementPage() {
   const { user } = useAuth()
   const { get, post, put, loading } = useApi()
+  const searchParams: any = useSearchParams() // Get query parameters for service highlighting
   const [services, setServices] = useState<Service[]>([])
   const [currentSubscriptions, setCurrentSubscriptions] = useState<MerchantServiceSubscription[]>([])
   const [selectedServices, setSelectedServices] = useState<{[key: string]: SelectedService}>({})
   const [isUpdating, setIsUpdating] = useState(false)
   const [showComparison, setShowComparison] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<PlanUpdateStatus | null>(null)
+  const [highlightedService, setHighlightedService] = useState<string | null>(null) // Track which service to highlight
+  const serviceRefs = useRef<{[key: string]: HTMLDivElement | null}>({}) // Refs for scrolling to services
 
   useEffect(() => {
     fetchData()
   }, [])
 
+  /**
+   * Handle service highlighting from query parameters
+   * When navigating from ServiceGate with ?service={name}, this will:
+   * 1. Highlight the specified service card with a pulse animation
+   * 2. Scroll the service into view smoothly
+   * 3. Clear the highlight after 3 seconds
+   */
+  useEffect(() => {
+    const serviceName = searchParams.get('service')
+    if (serviceName && services.length > 0) {
+      // Set the highlighted service
+      setHighlightedService(serviceName)
+      
+      // Find the service by name and scroll to it
+      const service = services.find(s => s.name === serviceName)
+      if (service && serviceRefs.current[service.id]) {
+        // Delay to ensure DOM is ready
+        setTimeout(() => {
+          serviceRefs.current[service.id]?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          })
+        }, 300)
+      }
+      
+      // Clear highlight after 3 seconds
+      setTimeout(() => {
+        setHighlightedService(null)
+      }, 3000)
+    }
+  }, [searchParams, services])
+
   const fetchData = async () => {
     try {
-      // Fetch available services
+      // Fetch all active services available for subscription
       const servicesData = await get<Service[]>('/api/services')
       
       const processedServices = servicesData
@@ -76,7 +130,7 @@ export default function PlanManagementPage() {
         }))
       setServices(processedServices)
 
-      // Fetch current subscriptions
+      // Fetch merchant's current active subscriptions
       let subscriptionsData: MerchantServiceSubscription[] = []
       try {
         subscriptionsData = await get<MerchantServiceSubscription[]>(`/api/merchant-services/subscribe?t=${Date.now()}`)
@@ -86,7 +140,7 @@ export default function PlanManagementPage() {
         setCurrentSubscriptions([])
       }
 
-      // Fetch plan update status
+      // Check if merchant can update their plan (24-hour restriction)
       try {
         const statusData = await get<PlanUpdateStatus>('/api/merchant-services/update-status')
         setUpdateStatus(statusData)
@@ -100,14 +154,14 @@ export default function PlanManagementPage() {
         })
       }
 
-      // Initialize selected services with current subscriptions
+      // Initialize selected services state with current active subscriptions
+      // This allows users to see what they currently have and make changes
       const initialSelected: {[key: string]: SelectedService} = {}
       if (subscriptionsData) {
         subscriptionsData.forEach(sub => {
           if (sub.status === 'ACTIVE') {
             initialSelected[sub.serviceId] = {
               serviceId: sub.serviceId,
-              quantity: sub.quantity,
               price: Number(sub.priceAtSubscription)
             }
           }
@@ -127,7 +181,6 @@ export default function PlanManagementPage() {
       } else {
         newSelected[service.id] = {
           serviceId: service.id,
-          quantity: 1,
           price: service.price
         }
       }
@@ -135,20 +188,9 @@ export default function PlanManagementPage() {
     })
   }
 
-  const updateQuantity = (serviceId: string, quantity: number) => {
-    if (quantity < 1) return
-    setSelectedServices(prev => ({
-      ...prev,
-      [serviceId]: {
-        ...prev[serviceId],
-        quantity
-      }
-    }))
-  }
-
   const calculateTotal = () => {
     return Object.values(selectedServices).reduce((total, service) => {
-      return total + (service.price * service.quantity)
+      return total + service.price
     }, 0)
   }
 
@@ -166,17 +208,16 @@ export default function PlanManagementPage() {
     
     const selected = selectedServices[serviceId]
     if (!selected) return 'removing'
-    if (selected.quantity !== subscription.quantity) return 'quantity_changed'
     return 'active'
   }
 
   const handleUpdatePlan = async () => {
     setIsUpdating(true)
     try {
-      // Get services to add/update
+      // Get services to add/update (quantity is always 1 now)
       const servicesToUpdate = Object.values(selectedServices).map(service => ({
         serviceId: service.serviceId,
-        quantity: service.quantity
+        quantity: 1
       }))
 
       // Get services to remove (currently subscribed but not in selected)
@@ -207,8 +248,6 @@ export default function PlanManagementPage() {
     switch (status) {
       case 'active':
         return <CheckIcon className="h-5 w-5 text-green-600" />
-      case 'quantity_changed':
-        return <ArrowUpIcon className="h-5 w-5 text-blue-600" />
       case 'removing':
         return <XMarkIcon className="h-5 w-5 text-red-600" />
       default:
@@ -221,8 +260,6 @@ export default function PlanManagementPage() {
     switch (status) {
       case 'active':
         return 'Current'
-      case 'quantity_changed':
-        return 'Updating'
       case 'removing':
         return 'Removing'
       default:
@@ -388,14 +425,18 @@ export default function PlanManagementPage() {
                   const isSelected = !!selectedServices[service.id]
                   const currentSubscription = currentSubscriptions.find(sub => sub.serviceId === service.id && sub.status === 'ACTIVE')
                   const status = getServiceStatus(service.id)
+                  const isHighlighted = highlightedService === service.name // Check if this service should be highlighted
                   
                   return (
                     <div
                       key={service.id}
+                      ref={(el) => { serviceRefs.current[service.id] = el }} // Store ref for scrolling
                       className={`relative rounded-[5px] shadow-md border transition-all duration-200 bg-white/10 border-white/20 backdrop-blur ${
                         isSelected 
                           ? 'ring-2 ring-amber-500' 
                           : 'hover:bg-white/10'
+                      } ${
+                        isHighlighted ? 'ring-4 ring-red-500 animate-pulse' : '' // Add pulsing red ring for highlighted service
                       }`}
                     >
                       {/* Status Badge */}
@@ -446,8 +487,7 @@ export default function PlanManagementPage() {
                         {currentSubscription && (
                           <div className="mb-4 p-3 bg-white/10 rounded-[5px] border border-white/10">
                             <div className="text-sm text-white/80">
-                              <div>Current: {currentSubscription.quantity} × {formatCurrency(Number(currentSubscription.priceAtSubscription))}</div>
-                              <div>Total: {formatCurrency(Number(currentSubscription.priceAtSubscription) * currentSubscription.quantity)}/day</div>
+                              <div>Subscribed: {formatCurrency(Number(currentSubscription.priceAtSubscription))}/day</div>
                             </div>
                           </div>
                         )}
@@ -464,26 +504,6 @@ export default function PlanManagementPage() {
                           >
                             {isSelected ? 'Remove Service' : 'Add Service'}
                           </button>
-
-                          {isSelected && (
-                            <div className="flex items-center justify-center space-x-3">
-                              <button
-                                onClick={() => updateQuantity(service.id, selectedServices[service.id].quantity - 1)}
-                                className="p-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white"
-                              >
-                                <MinusIcon className="h-4 w-4" />
-                              </button>
-                              <span className="text-sm font-medium">
-                                {selectedServices[service.id].quantity}
-                              </span>
-                              <button
-                                onClick={() => updateQuantity(service.id, selectedServices[service.id].quantity + 1)}
-                                className="p-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white"
-                              >
-                                <PlusIcon className="h-4 w-4" />
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -506,8 +526,8 @@ export default function PlanManagementPage() {
                     .filter(sub => sub.status === 'ACTIVE')
                     .map(sub => (
                       <div key={sub.id} className="flex justify-between text-sm text-white/90">
-                        <span>{sub.service.name} (×{sub.quantity})</span>
-                        <span>{formatCurrency(Number(sub.priceAtSubscription) * sub.quantity)}/day</span>
+                        <span>{sub.service.name}</span>
+                        <span>{formatCurrency(Number(sub.priceAtSubscription))}/day</span>
                       </div>
                     ))}
                   <div className="border-t border-white/20 pt-2 font-medium text-white">
@@ -522,8 +542,8 @@ export default function PlanManagementPage() {
                     const serviceData = services.find(s => s.id === service.serviceId)
                     return (
                       <div key={service.serviceId} className="flex justify-between text-sm text-white/90">
-                        <span>{serviceData?.name} (×{service.quantity})</span>
-                        <span>{formatCurrency(service.price * service.quantity)}/day</span>
+                        <span>{serviceData?.name}</span>
+                        <span>{formatCurrency(service.price)}/day</span>
                       </div>
                     )
                   })}

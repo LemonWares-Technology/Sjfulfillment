@@ -54,13 +54,11 @@ export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
         // Create notification for SJF admins
         await prisma.notification.create({
           data: {
-            user: {
-              connect: { id: user.userId }
-            },
-            type: 'PASSWORD_CHANGE',
+            recipientId: user.userId,
+            type: 'SYSTEM_ALERT',
             title: 'Logistics Partner Password Changed',
             message: `Logistics partner "${logisticsPartner.companyName}" (${user.email}) has changed their password.`,
-            data: {
+            metadata: {
               partnerId: logisticsPartner.id,
               partnerName: logisticsPartner.companyName,
               userEmail: user.email,
@@ -74,13 +72,11 @@ export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
         // Also log this in audit log
         await prisma.auditLog.create({
           data: {
-            user: {
-              connect: { id: user.userId }
-            },
+            userId: user.userId,
             action: 'PASSWORD_CHANGE',
             entityType: 'User',
             entityId: user.userId,
-            details: {
+            newValues: {
               userEmail: user.email,
               userRole: user.role,
               partnerId: logisticsPartner.id,

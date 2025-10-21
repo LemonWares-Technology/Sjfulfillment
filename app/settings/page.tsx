@@ -8,6 +8,8 @@ import { formatDate } from '@/app/lib/utils'
 import ApiKeyModal from '@/app/components/api-key-modal'
 import WebhookModal from '@/app/components/webhook-modal'
 import ServiceGate from '@/app/components/service-gate'
+import ServiceGateGroup from '@/app/components/service-gate-group'
+import DeleteAccountModal from '@/app/components/delete-account-modal'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast';
 import {
@@ -90,6 +92,7 @@ export default function SettingsPage() {
   const [selectedApiKey, setSelectedApiKey] = useState<ApiKey | null>(null)
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false)
 
   useEffect(() => {
     // Always force fresh user data when settings page loads
@@ -443,28 +446,40 @@ export default function SettingsPage() {
                       )}
                     </div>
 
+                    <div className="pt-6 border-t border-gray-200">
+                      <h3 className="text-sm font-medium text-red-600 mb-2">Danger Zone</h3>
+                      <p className="text-sm text-gray-200 mb-3">
+                        Permanently delete your account and all associated data. This action cannot be undone.
+                      </p>
+                      <button
+                        onClick={() => setShowDeleteAccountModal(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-[5px] text-sm"
+                      >
+                        Delete My Account
+                      </button>
+                    </div>
+
                   </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'api' && (
-              <div className="space-y-6">
-                {/* API Keys Section */}
-                <div className="bg-white/30 shadow rounded-[5px]">
-                  <div className="px-4 py-5 sm:p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <div>
-                        <h2 className="text-lg font-medium text-gray-200">API Keys</h2>
-                        <p className="text-sm text-gray-200 mt-1">
-                          Manage your API keys for external integrations
-                        </p>
-                      </div>
-                      <ServiceGate
-                        serviceName="API Access"
-                        fallbackMessage="To create API keys, you need to subscribe to the API Access service. This service provides programmatic access to platform features via REST API, webhook support, and third-party integrations."
-                        showIconOnly={true}
-                      >
+              <ServiceGateGroup
+                serviceName="API Access"
+                buttonLabel="Subscribe to access API & Webhooks"
+              >
+                <div className="space-y-6">
+                  {/* API Keys Section */}
+                  <div className="bg-white/30 shadow rounded-[5px]">
+                    <div className="px-4 py-5 sm:p-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h2 className="text-lg font-medium text-gray-200">API Keys</h2>
+                          <p className="text-sm text-gray-200 mt-1">
+                            Manage your API keys for external integrations
+                          </p>
+                        </div>
                         <button
                           onClick={() => openApiKeyModal()}
                           className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white px-4 py-2 rounded-[5px] text-sm flex items-center"
@@ -472,119 +487,113 @@ export default function SettingsPage() {
                           <KeyIcon className="h-4 w-4 mr-2" />
                           Create API Key
                         </button>
-                      </ServiceGate>
-                    </div>
-
-                    {apiKeys.length === 0 ? (
-                      <div className="bg-gray-50 rounded-[5px] p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500">No API Keys</h3>
-                            <p className="text-sm text-gray-500">
-                              Create your first API key to start integrating with external platforms
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => router.push('/api-docs')}
-                            className="text-amber-600 hover:text-amber-700 text-sm font-medium"
-                          >
-                            Learn More
-                          </button>
-                        </div>
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {apiKeys.map((apiKey) => (
-                          <div key={apiKey.id} className="bg-black/30 border border-gray-200 rounded-[5px] p-4 hover:border-gray-300 transition-colors">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <h3 className="text-sm font-medium text-gray-200 truncate">{apiKey.name}</h3>
-                                  <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${apiKey.isActive
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-gray-100 text-gray-600'
-                                    }`}>
-                                    {apiKey.isActive ? 'Active' : 'Inactive'}
-                                  </span>
-                                </div>
 
-                                {/* API Key Display with 3D Effect */}
-                                <div className="mb-3">
-                                  <div className="relative">
-                                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-[5px] p-3 shadow-inner">
-                                      <div className="flex items-center justify-between">
-                                        <code className="text-sm font-mono text-gray-200 break-all pr-2">
-                                          {apiKey.publicKey}
-                                        </code>
-                                        <button
-                                          onClick={() => copyToClipboard(apiKey.publicKey, `public-${apiKey.id}`)}
-                                          className="flex-shrink-0 p-1.5 text-gray-200 hover:text-gray-200 hover:bg-black/30 rounded-[5px] shadow-sm hover:shadow-md transition-all duration-200"
-                                          title="Copy API key"
-                                        >
-                                          {copiedKey === `public-${apiKey.id}` ? (
-                                            <CheckIcon className="h-4 w-4 text-green-600" />
-                                          ) : (
-                                            <ClipboardDocumentIcon className="h-4 w-4" />
-                                          )}
-                                        </button>
+                      {apiKeys.length === 0 ? (
+                        <div className="bg-gray-50 rounded-[5px] p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">No API Keys</h3>
+                              <p className="text-sm text-gray-500">
+                                Create your first API key to start integrating with external platforms
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => router.push('/api-docs')}
+                              className="text-amber-600 hover:text-amber-700 text-sm font-medium"
+                            >
+                              Learn More
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {apiKeys.map((apiKey) => (
+                            <div key={apiKey.id} className="bg-black/30 border border-gray-200 rounded-[5px] p-4 hover:border-gray-300 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <h3 className="text-sm font-medium text-gray-200 truncate">{apiKey.name}</h3>
+                                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${apiKey.isActive
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                      }`}>
+                                      {apiKey.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </div>
+
+                                  {/* API Key Display with 3D Effect */}
+                                  <div className="mb-3">
+                                    <div className="relative">
+                                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-[5px] p-3 shadow-inner">
+                                        <div className="flex items-center justify-between">
+                                          <code className="text-sm font-mono text-gray-200 break-all pr-2">
+                                            {apiKey.publicKey}
+                                          </code>
+                                          <button
+                                            onClick={() => copyToClipboard(apiKey.publicKey, `public-${apiKey.id}`)}
+                                            className="flex-shrink-0 p-1.5 text-gray-200 hover:text-gray-200 hover:bg-black/30 rounded-[5px] shadow-sm hover:shadow-md transition-all duration-200"
+                                            title="Copy API key"
+                                          >
+                                            {copiedKey === `public-${apiKey.id}` ? (
+                                              <CheckIcon className="h-4 w-4 text-green-600" />
+                                            ) : (
+                                              <ClipboardDocumentIcon className="h-4 w-4" />
+                                            )}
+                                          </button>
+                                        </div>
                                       </div>
+                                      {/* 3D Shadow Effect */}
+                                      <div className="absolute inset-0 bg-gradient-to-r from-gray-200/20 to-gray-300/20 rounded-[5px] transform translate-x-0.5 translate-y-0.5 -z-10"></div>
                                     </div>
-                                    {/* 3D Shadow Effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200/20 to-gray-300/20 rounded-[5px] transform translate-x-0.5 translate-y-0.5 -z-10"></div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-4 text-xs text-gray-200">
+                                    <span>{apiKey.usageCount} requests</span>
+                                    <span>•</span>
+                                    <span>{apiKey.rateLimit}/hour limit</span>
+                                    <span>•</span>
+                                    <span>
+                                      {apiKey.lastUsed
+                                        ? `Last used ${new Date(apiKey.lastUsed).toLocaleDateString()}`
+                                        : 'Never used'
+                                      }
+                                    </span>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center space-x-4 text-xs text-gray-200">
-                                  <span>{apiKey.usageCount} requests</span>
-                                  <span>•</span>
-                                  <span>{apiKey.rateLimit}/hour limit</span>
-                                  <span>•</span>
-                                  <span>
-                                    {apiKey.lastUsed
-                                      ? `Last used ${new Date(apiKey.lastUsed).toLocaleDateString()}`
-                                      : 'Never used'
-                                    }
-                                  </span>
+                                <div className="flex items-center space-x-2 ml-4">
+                                  <button
+                                    onClick={() => openApiKeyModal(apiKey)}
+                                    className="px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-[5px] transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteApiKey(apiKey.id, apiKey.name)}
+                                    className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-[5px] transition-colors"
+                                  >
+                                    Delete
+                                  </button>
                                 </div>
                               </div>
-
-                              <div className="flex items-center space-x-2 ml-4">
-                                <button
-                                  onClick={() => openApiKeyModal(apiKey)}
-                                  className="px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-[5px] transition-colors"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteApiKey(apiKey.id, apiKey.name)}
-                                  className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-[5px] transition-colors"
-                                >
-                                  Delete
-                                </button>
-                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Webhooks Section */}
-                <div className="bg-white/30 shadow rounded-[5px]">
-                  <div className="px-4 py-5 sm:p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <div>
-                        <h2 className="text-lg font-medium text-gray-200">Webhooks</h2>
-                        <p className="text-sm text-gray-200 mt-1">
-                          Configure webhooks to receive real-time notifications
-                        </p>
-                      </div>
-                      <ServiceGate
-                        serviceName="API Access"
-                        fallbackMessage="To create webhooks, you need to subscribe to the API Access service. This service provides programmatic access to platform features via REST API, webhook support, and third-party integrations."
-                        showIconOnly={true}
-                      >
+                  {/* Webhooks Section */}
+                  <div className="bg-white/30 shadow rounded-[5px]">
+                    <div className="px-4 py-5 sm:p-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h2 className="text-lg font-medium text-gray-200">Webhooks</h2>
+                          <p className="text-sm text-gray-200 mt-1">
+                            Configure webhooks to receive real-time notifications
+                          </p>
+                        </div>
                         <button
                           onClick={() => openWebhookModal()}
                           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-[5px] text-sm flex items-center"
@@ -592,103 +601,103 @@ export default function SettingsPage() {
                           <LinkIcon className="h-4 w-4 mr-2" />
                           Create Webhook
                         </button>
-                      </ServiceGate>
-                    </div>
+                      </div>
 
-                    {webhooks.length === 0 ? (
-                      <div className="bg-gray-50 rounded-[5px] p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500">No Webhooks</h3>
-                            <p className="text-sm text-gray-500">
-                              Set up webhooks to receive real-time updates about orders and inventory
-                            </p>
+                      {webhooks.length === 0 ? (
+                        <div className="bg-gray-50 rounded-[5px] p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">No Webhooks</h3>
+                              <p className="text-sm text-gray-500">
+                                Set up webhooks to receive real-time updates about orders and inventory
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => router.push('/api-docs')}
+                              className="text-green-600 hover:text-green-700 text-sm font-medium"
+                            >
+                              Learn More
+                            </button>
                           </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {webhooks.map((webhook) => (
+                            <div key={webhook.id} className="border border-gray-200 rounded-[5px] p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-3">
+                                    <h3 className="text-sm font-medium text-gray-200">{webhook.name}</h3>
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${webhook.isActive
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-red-100 text-red-800'
+                                      }`}>
+                                      {webhook.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-200 mt-1">
+                                    {webhook.url}
+                                  </p>
+                                  <p className="text-xs text-gray-200 mt-1">
+                                    Events: {webhook.events.join(', ')} • Success: {webhook.successCount} • Failures: {webhook.failureCount}
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => openWebhookModal(webhook)}
+                                    className="text-green-600 hover:text-green-700 text-sm font-medium"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteWebhook(webhook.id, webhook.name)}
+                                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* API Documentation Section */}
+                  <div className="bg-white/30 shadow rounded-[5px]">
+                    <div className="px-4 py-5 sm:p-6">
+                      <h2 className="text-lg font-medium text-gray-200 mb-4">API Documentation</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border border-gray-200 rounded-[5px] p-4">
+                          <h3 className="text-sm font-medium text-gray-200 mb-2">Quick Start Guide</h3>
+                          <p className="text-sm text-gray-200 mb-3">
+                            Get started with our API in minutes
+                          </p>
                           <button
                             onClick={() => router.push('/api-docs')}
-                            className="text-green-600 hover:text-green-700 text-sm font-medium"
+                            className="text-amber-600 hover:text-amber-700 text-sm font-medium"
                           >
-                            Learn More
+                            View Guide →
+                          </button>
+                        </div>
+                        <div className="border border-gray-200 rounded-[5px] p-4">
+                          <h3 className="text-sm font-medium text-gray-200 mb-2">Integration Examples</h3>
+                          <p className="text-sm text-gray-200 mb-3">
+                            WooCommerce and Shopify integration examples
+                          </p>
+                          <button
+                            onClick={() => router.push('/api-docs')}
+                            className="text-amber-600 hover:text-amber-700 text-sm font-medium"
+                          >
+                            View Examples →
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {webhooks.map((webhook) => (
-                          <div key={webhook.id} className="border border-gray-200 rounded-[5px] p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3">
-                                  <h3 className="text-sm font-medium text-gray-200">{webhook.name}</h3>
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${webhook.isActive
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                    }`}>
-                                    {webhook.isActive ? 'Active' : 'Inactive'}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-200 mt-1">
-                                  {webhook.url}
-                                </p>
-                                <p className="text-xs text-gray-200 mt-1">
-                                  Events: {webhook.events.join(', ')} • Success: {webhook.successCount} • Failures: {webhook.failureCount}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => openWebhookModal(webhook)}
-                                  className="text-green-600 hover:text-green-700 text-sm font-medium"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteWebhook(webhook.id, webhook.name)}
-                                  className="text-red-600 hover:text-red-700 text-sm font-medium"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* API Documentation Section */}
-                <div className="bg-white/30 shadow rounded-[5px]">
-                  <div className="px-4 py-5 sm:p-6">
-                    <h2 className="text-lg font-medium text-gray-200 mb-4">API Documentation</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border border-gray-200 rounded-[5px] p-4">
-                        <h3 className="text-sm font-medium text-gray-200 mb-2">Quick Start Guide</h3>
-                        <p className="text-sm text-gray-200 mb-3">
-                          Get started with our API in minutes
-                        </p>
-                        <button
-                          onClick={() => router.push('/api-docs')}
-                          className="text-amber-600 hover:text-amber-700 text-sm font-medium"
-                        >
-                          View Guide →
-                        </button>
-                      </div>
-                      <div className="border border-gray-200 rounded-[5px] p-4">
-                        <h3 className="text-sm font-medium text-gray-200 mb-2">Integration Examples</h3>
-                        <p className="text-sm text-gray-200 mb-3">
-                          WooCommerce and Shopify integration examples
-                        </p>
-                        <button
-                          onClick={() => router.push('/api-docs')}
-                          className="text-amber-600 hover:text-amber-700 text-sm font-medium"
-                        >
-                          View Examples →
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </ServiceGateGroup>
             )}
 
             {/* {activeTab === 'preferences' && (
@@ -763,6 +772,51 @@ export default function SettingsPage() {
         }}
         onSave={handleWebhookSave}
         webhook={selectedWebhook}
+      />
+
+      <DeleteAccountModal
+        isOpen={showDeleteAccountModal}
+        onClose={() => setShowDeleteAccountModal(false)}
+        onConfirm={async (password: string, twoFactorToken?: string) => {
+          try {
+            // For merchant admins, use merchant deletion endpoint
+            if (user?.role === 'MERCHANT_ADMIN' && user?.merchantId) {
+              const token = localStorage.getItem('token')
+              const response = await fetch(`/api/merchants/${user.merchantId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token && { Authorization: `Bearer ${token}` })
+                },
+                body: JSON.stringify({ password, twoFactorToken })
+              })
+
+              const data = await response.json()
+              if (!response.ok) {
+                toast.error(data.error || data.message || 'Failed to delete account')
+                throw new Error(data.error || data.message)
+              }
+
+              toast.success('Your account has been permanently deleted')
+              // Clear local storage and redirect
+              localStorage.removeItem('token')
+              setTimeout(() => {
+                router.push('/login')
+              }, 1500)
+            } else {
+              // For other users (warehouse staff, etc), this feature is not available via self-service
+              toast.error('Self-deletion is not available for your account type. Please contact an administrator.')
+              throw new Error('Self-deletion not available')
+            }
+          } catch (error: any) {
+            console.error('Failed to delete account:', error)
+            if (!error.message?.includes('delete')) {
+              toast.error('Network error. Please check your connection and try again.')
+            }
+            throw error
+          }
+        }}
+        twoFactorEnabled={user?.twoFactorEnabled || false}
       />
     </DashboardLayout>
   )

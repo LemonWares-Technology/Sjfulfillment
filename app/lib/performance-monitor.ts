@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 interface PerformanceMetrics {
   pageLoadTime: number
@@ -10,14 +10,6 @@ interface PerformanceMetrics {
   memoryUsage?: number
   networkRequests: number
   errorCount: number
-}
-
-interface PerformanceEntry {
-  name: string
-  entryType: string
-  startTime: number
-  duration: number
-  timestamp: number
 }
 
 class PerformanceMonitor {
@@ -48,8 +40,9 @@ class PerformanceMonitor {
         const entries = list.getEntries()
         entries.forEach((entry) => {
           if (entry.entryType === 'navigation') {
-            this.metrics.pageLoadTime = entry.loadEventEnd - entry.loadEventStart
-            this.metrics.timeToInteractive = entry.domInteractive - entry.navigationStart
+            const navEntry = entry as PerformanceNavigationTiming
+            this.metrics.pageLoadTime = navEntry.loadEventEnd - navEntry.loadEventStart
+            this.metrics.timeToInteractive = navEntry.domInteractive - navEntry.fetchStart
           }
         })
       })

@@ -3,7 +3,39 @@
 import { useAuth } from '@/app/lib/auth-context'
 import { useApi } from '@/app/lib/use-api'
 import { useEffect, useState } from 'react'
-import { InformationCircleIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+import { LockClosedIcon } from '@heroicons/react/24/outline'
+
+/**
+ * ServiceGate Component
+ * 
+ * Restricts access to features based on merchant's service subscriptions.
+ * 
+ * Display Modes:
+ * - inline (default): Shows a compact red "Subscribe to {service}" button 
+ *   in place of the gated content. Best for replacing individual buttons/actions.
+ * - block: Shows a full modal-like card with explanation. Best for blocking 
+ *   entire sections or pages.
+ * 
+ * Access Control:
+ * - SJFS_ADMIN: Always has access to everything
+ * - WAREHOUSE_STAFF: Has access to specific services without subscription
+ * - MERCHANT_ADMIN/MERCHANT_STAFF: Requires active service subscription
+ * 
+ * Navigation:
+ * When users click the subscribe button, they're redirected to:
+ * /merchant/plans?service={serviceName}
+ * 
+ * This allows the plans page to automatically scroll to and highlight
+ * the specific service they need to subscribe to.
+ * 
+ * @param serviceName - The name of the service to check (e.g., "Staff Management")
+ * @param children - The content to show when user has access
+ * @param mode - 'inline' for button replacement, 'block' for full card display
+ * @param fallbackMessage - Custom message for block mode
+ * @param className - Additional CSS classes
+ * @param showIconOnly - Legacy prop, kept for backwards compatibility
+ */
 
 interface ServiceGateProps {
   serviceName: string
@@ -11,6 +43,7 @@ interface ServiceGateProps {
   fallbackMessage?: string
   className?: string
   showIconOnly?: boolean
+  mode?: 'inline' | 'block' // New prop to control display mode
 }
 
 interface MerchantService {
@@ -27,10 +60,12 @@ export default function ServiceGate({
   children, 
   fallbackMessage,
   className = "",
-  showIconOnly = true
+  showIconOnly = true,
+  mode = 'inline' // Default to inline mode
 }: ServiceGateProps) {
   const { user } = useAuth()
   const { get } = useApi()
+  const router = useRouter()
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -115,28 +150,51 @@ export default function ServiceGate({
     return <>{children}</>
   }
 
-  const defaultMessage = `This feature requires the "${serviceName}" service. Please subscribe to this service to access this functionality.`
-  const message = fallbackMessage || defaultMessage
+  const handleSubscribe = () => {
+    /**
+     * Navigate to merchant plans page with the service name as a query parameter
+     * This allows the plans page to:
+     * 1. Automatically scroll to the requested service
+     * 2. Highlight it with a pulsing animation
+     * 3. Make it easy for users to subscribe to the specific service they need
+     */
+    router.push(`/merchant/plans?service=${encodeURIComponent(serviceName)}`)
+  }
 
-  if (showIconOnly) {
+  // Inline mode: Show a compact red button in place of the wrapped content
+  if (mode === 'inline') {
     return (
-      <div className={`relative inline-flex group ${className}`}>
-        <InformationCircleIcon className="h-5 w-5 text-gray-400 cursor-help" />
-        {/* Tooltip positioned below to avoid negative offsets; wraps text and limits width to prevent page overflow */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white/90 text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[320px] sm:max-w-xs whitespace-normal break-words z-50 shadow-lg">
-          {message}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900"></div>
-        </div>
-      </div>
+      <button
+        onClick={handleSubscribe}
+        className={`bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-[5px] transition-colors duration-200 flex items-center shadow-md ${className}`}
+      >
+        <LockClosedIcon className="h-5 w-5 mr-2" />
+        Subscribe to {serviceName}
+      </button>
     )
   }
 
+  // Block mode: Show the full modal-like display (original behavior)
   return (
-    <div className={`flex items-center space-x-2 text-white/90 ${className}`}>
-      <InformationCircleIcon className="h-5 w-5 text-[#f08c17]" />
-      <span className="text-sm max-w-[640px] whitespace-normal break-words" title={message}>
-        {message}
-      </span>
+    <div className={`flex flex-col items-center justify-center py-8 ${className}`}>
+      <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full text-center">
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+          <LockClosedIcon className="h-6 w-6 text-red-600" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Subscription Required
+        </h3>
+        <p className="text-sm text-gray-600 mb-6">
+          {fallbackMessage || `Subscribe to "${serviceName}" to access this feature`}
+        </p>
+        <button
+          onClick={handleSubscribe}
+          className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-[5px] transition-colors duration-200 flex items-center justify-center"
+        >
+          <LockClosedIcon className="h-5 w-5 mr-2" />
+          Subscribe to {serviceName}
+        </button>
+      </div>
     </div>
   )
 }

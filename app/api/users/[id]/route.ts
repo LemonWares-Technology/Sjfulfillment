@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/prisma'
 import { createResponse, createErrorResponse, withRole } from '../../../lib/api-utils'
 import { updateUserSchema } from '../../../lib/validations'
 import { hashPassword } from '../../../lib/password'
+import bcrypt from 'bcryptjs'
 
 // GET /api/users/[id]
 export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: NextRequest, user, { params }: { params: Promise<{ id: string }> }) => {
@@ -124,24 +125,52 @@ export const DELETE = withRole(['SJFS_ADMIN'], async (request: NextRequest, user
       return createErrorResponse('You cannot delete your own account', 403)
     }
 
+    // Parse request body for admin password verification
+    let adminPassword: string | undefined
+    try {
+      const body = await request.json()
+      adminPassword = body.adminPassword
+    } catch {
+      // No body or invalid JSON
+    }
+
+    // Require admin password verification
+    if (!adminPassword) {
+      return createErrorResponse('Admin password is required to delete a user account', 400)
+    }
+
+    // Verify admin password
+    const adminUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { id: true, password: true }
+    })
+
+    if (!adminUser) {
+      return createErrorResponse('Admin user not found', 404)
+    }
+
+    const validAdminPassword = await bcrypt.compare(adminPassword, adminUser.password)
+    if (!validAdminPassword) {
+      return createErrorResponse('Invalid admin password', 401)
+    }
+
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true }
+      select: { 
+        id: true, 
+        role: true,
+        email: true,
+        firstName: true,
+        lastName: true
+      }
     })
 
     if (!existingUser) {
       return createErrorResponse('User not found', 404)
     }
 
-
-    // Soft delete by deactivating
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isActive: false }
-    })
-
-    // Log the change
+    // Log the deletion BEFORE deleting (since user will be gone)
     await prisma.auditLog.create({
       data: {
         user: {
@@ -149,11 +178,54 @@ export const DELETE = withRole(['SJFS_ADMIN'], async (request: NextRequest, user
         },
         action: 'DELETE_USER',
         entityType: 'users',
-        entityId: userId
+        entityId: userId,
+        oldValues: {
+          email: existingUser.email,
+          role: existingUser.role,
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName
+        }
       }
-    })
+    }).catch(err => {
+      console.error('Failed to create audit log:', err);
+    });
 
-    return createResponse(null, 200, 'User deactivated successfully')
+    // HARD DELETE - Delete all related data first, then the user
+    console.log(`PERMANENTLY DELETING user ${userId}: ${existingUser.email} (${existingUser.role})`);
+    
+    // 1. Delete user sessions (foreign key constraint)
+    await prisma.userSession.deleteMany({
+      where: { userId }
+    });
+
+    // 2. Delete notifications for this user
+    await prisma.notification.deleteMany({
+      where: { recipientId: userId }
+    });
+
+    // 3. Delete password reset tokens
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId }
+    });
+
+    // 4. Finally delete the user
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    
+    console.log(`User ${userId} PERMANENTLY DELETED from database`);
+
+    return createResponse(
+      { 
+        message: 'User permanently deleted',
+        deletedUser: {
+          email: existingUser.email,
+          role: existingUser.role
+        }
+      }, 
+      200, 
+      'User deleted successfully'
+    )
   } catch (error) {
     console.error('Delete user error:', error)
     return createErrorResponse('Failed to delete user', 500)

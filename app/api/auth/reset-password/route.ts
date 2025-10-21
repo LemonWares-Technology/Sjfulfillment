@@ -53,11 +53,11 @@ export const POST = async (request: NextRequest) => {
         // Create notification for SJF admins
         await prisma.notification.create({
           data: {
-            userId: resetToken.userId, // This will be used to identify the user
-            type: 'PASSWORD_RESET',
+            recipientId: resetToken.userId,
+            type: 'SYSTEM_ALERT',
             title: 'Logistics Partner Password Reset',
             message: `Logistics partner "${logisticsPartner.companyName}" (${resetToken.user.email}) has reset their password.`,
-            data: {
+            metadata: {
               partnerId: logisticsPartner.id,
               partnerName: logisticsPartner.companyName,
               userEmail: resetToken.user.email,
@@ -75,7 +75,7 @@ export const POST = async (request: NextRequest) => {
             action: 'PASSWORD_RESET',
             entityType: 'User',
             entityId: resetToken.userId,
-            details: {
+            newValues: {
               userEmail: resetToken.user.email,
               userRole: resetToken.user.role,
               partnerId: logisticsPartner.id,

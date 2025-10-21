@@ -27,6 +27,7 @@ interface WebhookModalProps {
   onClose: () => void
   onSave: () => void
   webhook?: Webhook | null
+  merchantId?: string // For admin creating webhooks for specific merchants
 }
 
 const WEBHOOK_EVENTS = [
@@ -46,13 +47,14 @@ const WEBHOOK_EVENTS = [
   'return.rejected'
 ]
 
-export default function WebhookModal({ isOpen, onClose, onSave, webhook }: WebhookModalProps) {
+export default function WebhookModal({ isOpen, onClose, onSave, webhook, merchantId }: WebhookModalProps) {
   const { post, put, loading } = useApi()
   const [formData, setFormData] = useState({
     name: '',
     url: '',
     events: [] as string[],
-    isActive: true
+    isActive: true,
+    merchantId: merchantId || undefined
   })
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [showSuccess, setShowSuccess] = useState(false)
@@ -64,7 +66,8 @@ export default function WebhookModal({ isOpen, onClose, onSave, webhook }: Webho
         name: webhook.name,
         url: webhook.url,
         events: webhook.events,
-        isActive: webhook.isActive
+        isActive: webhook.isActive,
+        merchantId: merchantId || undefined
       })
       setCreatedWebhook(null)
       setShowSuccess(false)
@@ -73,13 +76,14 @@ export default function WebhookModal({ isOpen, onClose, onSave, webhook }: Webho
         name: '',
         url: '',
         events: [],
-        isActive: true
+        isActive: true,
+        merchantId: merchantId || undefined
       })
       setCreatedWebhook(null)
       setShowSuccess(false)
     }
     setErrors({})
-  }, [webhook, isOpen])
+  }, [webhook, isOpen, merchantId])
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {}

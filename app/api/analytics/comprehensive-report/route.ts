@@ -57,7 +57,7 @@ export const GET = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: J
     if (format === 'pdf') {
       const pdfBuffer = await generateComprehensivePdf(
         totalMerchants, totalOrders, totalRevenueAmount, totalProducts, totalCustomers,
-        merchants, orders, products, customers, logisticsPartners, subscriptions, serviceSubscriptions,
+        [merchants], orders, [products], [customers], [logisticsPartners], [subscriptions], [serviceSubscriptions],
         deliveredOrders, pendingOrders, returnedOrders, startDate, endDate
       )
       return new NextResponse(pdfBuffer as any, {

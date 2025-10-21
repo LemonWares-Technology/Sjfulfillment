@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
+import { JWTPayload } from '@/app/lib/auth'
 import { createErrorResponse, createResponse, withRole } from '@/app/lib/api-utils'
 import { prisma } from '@/app/lib/prisma'
 
 // GET /api/debug/stock/[id] - Get stock item details
-export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: NextRequest, user: JWTPayload, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id: stockItemId } = await params
     
@@ -42,7 +43,7 @@ export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: Ne
 })
 
 // PUT /api/debug/stock/[id] - Manually update stock quantity
-export const PUT = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: NextRequest, user: JWTPayload, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id: stockItemId } = await params
     const body = await request.json()

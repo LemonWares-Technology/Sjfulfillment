@@ -117,15 +117,15 @@ export async function authenticateApiKey(request: NextRequest): Promise<{ succes
 /**
  * Middleware wrapper for API key authentication
  */
-export function withApiKey(handler: (request: NextRequest, apiKey: ApiKeyPayload) => Promise<Response>) {
-  return async (request: NextRequest): Promise<Response> => {
+export function withApiKey(handler: (request: NextRequest, apiKey: ApiKeyPayload, context?: any) => Promise<Response>) {
+  return async (request: NextRequest, context?: any): Promise<Response> => {
     const authResult = await authenticateApiKey(request)
     
     if (!authResult.success) {
       return createErrorResponse(authResult.error, authResult.status)
     }
 
-    return handler(request, authResult.payload)
+    return handler(request, authResult.payload, context)
   }
 }
 

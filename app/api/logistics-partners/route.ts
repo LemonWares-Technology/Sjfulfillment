@@ -186,8 +186,7 @@ export const POST = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: 
       }
     })
 
-    // Send welcome email asynchronously (no need to block the response)
-    // Includes login instructions using the provided email and temporary password
+    // Send welcome email asynchronously with login credentials
     sendWelcomePartnerEmail({
       to: partnerData.email,
       partnerName: partnerData.contactPerson,

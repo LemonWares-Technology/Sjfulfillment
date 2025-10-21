@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useApi } from '@/app/lib/use-api'
+import { useAuth } from '@/app/lib/auth-context'
 
 interface Product {
   id?: string
@@ -34,6 +35,11 @@ interface Product {
   }[]
 }
 
+interface Merchant {
+  id: string
+  businessName: string
+}
+
 interface ProductModalProps {
   isOpen: boolean
   onClose: () => void
@@ -42,8 +48,11 @@ interface ProductModalProps {
 }
 
 export default function ProductModal({ isOpen, onClose, product, onSave }: ProductModalProps) {
-  const { post, put, loading } = useApi()
+  const { user } = useAuth()
+  const { post, put, get, loading } = useApi()
   const [uploadingImages, setUploadingImages] = useState(false)
+  const [merchants, setMerchants] = useState<Merchant[]>([])
+  const [selectedMerchantId, setSelectedMerchantId] = useState<string>('')
   const [formData, setFormData] = useState<Product>({
     name: '',
     description: '',
@@ -58,6 +67,24 @@ export default function ProductModal({ isOpen, onClose, product, onSave }: Produ
     isPerishable: false,
     quantity: undefined
   })
+
+  // Fetch merchants if user is admin
+  useEffect(() => {
+    if (user?.role === 'SJFS_ADMIN' && isOpen) {
+      fetchMerchants()
+    }
+  }, [user, isOpen])
+
+  const fetchMerchants = async () => {
+    try {
+      const response = await get('/api/merchants?limit=100')
+      if (response?.data?.merchants) {
+        setMerchants(response.data.merchants)
+      }
+    } catch (error) {
+      console.error('Failed to fetch merchants:', error)
+    }
+  }
 
   useEffect(() => {
     if (product) {
@@ -156,9 +183,14 @@ export default function ProductModal({ isOpen, onClose, product, onSave }: Produ
     
     try {
       // Prepare form data with proper quantity handling
-      const submitData = {
+      const submitData: any = {
         ...formData,
         quantity: formData.quantity !== undefined ? parseInt(formData.quantity.toString()) : 0
+      }
+      
+      // Include merchantId for admin users if they selected one (optional for admins)
+      if (user?.role === 'SJFS_ADMIN' && selectedMerchantId) {
+        submitData.merchantId = selectedMerchantId
       }
       
       console.log('Submitting product data:', submitData)
@@ -194,6 +226,30 @@ export default function ProductModal({ isOpen, onClose, product, onSave }: Produ
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Merchant Selector for Admin Users */}
+            {user?.role === 'SJFS_ADMIN' && !product?.id && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Merchant (Optional)
+                </label>
+                <select
+                  value={selectedMerchantId}
+                  onChange={(e) => setSelectedMerchantId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">-- Create as Admin Product --</option>
+                  {merchants.map((merchant) => (
+                    <option key={merchant.id} value={merchant.id}>
+                      {merchant.businessName}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-600">
+                  Leave unselected to create your own admin product, or select a merchant to create a product for them.
+                </p>
+              </div>
+            )}
+
             {/* Basic Product Information */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>

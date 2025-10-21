@@ -12,12 +12,12 @@ import {
   PlusIcon, 
   PencilIcon, 
   TrashIcon,
-  EyeIcon,
-  EyeSlashIcon
 } from '@heroicons/react/24/outline'
 import { useRouter, useParams } from 'next/navigation'
 import ApiKeyModal from '@/app/components/api-key-modal'
 import WebhookModal from '@/app/components/webhook-modal'
+import ConfirmDeleteModal from '@/app/components/confirm-delete-modal'
+import toast from 'react-hot-toast'
 
 interface Merchant {
   id: string
@@ -114,6 +114,7 @@ export default function MerchantDetailPage() {
   const [showWebhookModal, setShowWebhookModal] = useState(false)
   const [editingApiKey, setEditingApiKey] = useState<ApiKey | null>(null)
   const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null)
+  const [showAdminDeleteModal, setShowAdminDeleteModal] = useState(false)
 
   useEffect(() => {
     if (merchantId) {
@@ -248,24 +249,67 @@ export default function MerchantDetailPage() {
     )
   }
 
+  const handleDeleteMerchant = () => {
+    setShowAdminDeleteModal(true)
+  }
+
+  const handleAdminDeleteConfirm = async (adminPassword?: string) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/merchants/${merchantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
+        body: JSON.stringify({ adminPassword })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        const errorMessage = data.error || data.message || `Failed to delete merchant account (Status: ${response.status})`
+        toast.error(errorMessage, { duration: 5000 })
+        throw new Error(errorMessage)
+      }
+
+      toast.success('Merchant account deleted successfully')
+      setTimeout(() => {
+        router.push('/admin/merchants')
+      }, 1500)
+    } catch (error: any) {
+      if (!error.message?.includes('delete')) {
+        toast.error('Network error. Please check your connection and try again.')
+      }
+      throw error
+    }
+  }
+
   return (
     <DashboardLayout userRole="SJFS_ADMIN">
       <div className="px-4 py-6 sm:px-0">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <button
-              onClick={() => router.push('/admin/merchants')}
-              className="mr-4 p-2 text-white hover:text-gray-600"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-[#f08c17]">{merchant.businessName}</h1>
-              <p className="mt-2 text-white">
-                Merchant ID: {merchant.id}
-              </p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <button
+                onClick={() => router.push('/admin/merchants')}
+                className="mr-4 p-2 text-white hover:text-gray-600"
+              >
+                <ArrowLeftIcon className="h-5 w-5" />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-[#f08c17]">{merchant.businessName}</h1>
+                <p className="mt-2 text-white">
+                  Merchant ID: {merchant.id}
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => setShowAdminDeleteModal(true)}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Delete Merchant
+            </button>
           </div>
 
           {/* Tabs */}
@@ -709,6 +753,7 @@ export default function MerchantDetailPage() {
           onClose={handleCloseModals}
           onSave={handleSave}
           apiKey={editingApiKey}
+          merchantId={merchantId}
         />
 
         <WebhookModal
@@ -716,8 +761,23 @@ export default function MerchantDetailPage() {
           onClose={handleCloseModals}
           onSave={handleSave}
           webhook={editingWebhook}
+          merchantId={merchantId}
+        />
+
+        <ConfirmDeleteModal
+          isOpen={showAdminDeleteModal}
+          onClose={() => setShowAdminDeleteModal(false)}
+          onConfirm={handleAdminDeleteConfirm}
+          title="Delete Merchant Account"
+          description={`Are you sure you want to delete ${merchant?.businessName}? This action is permanent and cannot be undone. All associated data including users, products, orders, and subscriptions will be permanently removed.`}
+          confirmLabel="Delete Merchant"
+          confirmPlaceholder={`Type ${merchant?.businessName || 'DELETE'} to confirm`}
+          expectedText={merchant?.businessName || 'DELETE'}
+          requirePassword
+          passwordLabel="Enter your admin password"
         />
       </div>
     </DashboardLayout>
   )
 }
+

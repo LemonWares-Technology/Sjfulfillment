@@ -1,3 +1,4 @@
+import { PaymentMethod } from '../generated/prisma'
 import { prisma } from './prisma'
 import { triggerWebhooks, WEBHOOK_EVENTS } from './webhook-service'
 
@@ -33,6 +34,9 @@ export class WooCommerceIntegration {
         where: {
           merchantId,
           sku: productData.sku
+        },
+        include: {
+          stockItems: true
         }
       })
 
@@ -214,7 +218,7 @@ export class WooCommerceIntegration {
 
       // Calculate total amount
       const itemsTotal = orderData.items.reduce(
-        (sum, item) => sum + item.quantity * item.unitPrice,
+        (sum: number, item: any) => sum + item.quantity * item.unitPrice,
         0
       )
       const totalAmount = itemsTotal + orderData.deliveryFee
@@ -231,10 +235,10 @@ export class WooCommerceIntegration {
           orderValue: itemsTotal,
           deliveryFee: orderData.deliveryFee,
           totalAmount,
-          paymentMethod: orderData.paymentMethod,
+          paymentMethod: orderData.paymentMethod as PaymentMethod,
           notes: orderData.notes,
           orderItems: {
-            create: orderData.items.map((item) => ({
+            create: orderData.items.map((item: any) => ({
               productId: item.productId,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
@@ -307,6 +311,9 @@ export class ShopifyIntegration {
         where: {
           merchantId,
           sku: productData.sku
+        },
+        include: {
+          stockItems: true
         }
       })
 
@@ -488,7 +495,7 @@ export class ShopifyIntegration {
 
       // Calculate total amount
       const itemsTotal = orderData.items.reduce(
-        (sum, item) => sum + item.quantity * item.unitPrice,
+        (sum: number, item: any) => sum + item.quantity * item.unitPrice,
         0
       )
       const totalAmount = itemsTotal + orderData.deliveryFee
@@ -505,10 +512,10 @@ export class ShopifyIntegration {
           orderValue: itemsTotal,
           deliveryFee: orderData.deliveryFee,
           totalAmount,
-          paymentMethod: orderData.paymentMethod,
+          paymentMethod: orderData.paymentMethod as PaymentMethod,
           notes: orderData.notes,
           orderItems: {
-            create: orderData.items.map((item) => ({
+            create: orderData.items.map((item: any) => ({
               productId: item.productId,
               quantity: item.quantity,
               unitPrice: item.unitPrice,

@@ -159,19 +159,6 @@ export async function ensureSJServices() {
   
   const sjServices = [
     {
-      name: 'Set Up Fee',
-      description: 'One-time setup fee for new merchant onboarding and account configuration',
-      price: 5000.00,
-      category: 'Setup',
-      features: [
-        'Account setup and configuration',
-        'Initial system training',
-        'Documentation and guidelines',
-        'Support team introduction'
-      ],
-      isActive: true
-    },
-    {
       name: 'Receiving Fee',
       description: 'Fee for receiving and processing incoming inventory at warehouse',
       price: 50.00,
@@ -210,71 +197,7 @@ export async function ensureSJServices() {
       ],
       isActive: true
     },
-    {
-      name: 'Packaging Fee/SMS/Calls',
-      description: 'Fee for packaging materials and customer communication',
-      price: 75.00,
-      category: 'Communication',
-      features: [
-        'Professional packaging materials',
-        'SMS notifications to customers',
-        'Phone call support',
-        'Order status updates'
-      ],
-      isActive: true
-    },
-    {
-      name: 'Delivery Fee (Within Lagos)',
-      description: 'Delivery fee for orders within Lagos state',
-      price: 500.00,
-      category: 'Delivery',
-      features: [
-        'Same-day delivery (Lagos)',
-        'Real-time tracking',
-        'Delivery confirmation',
-        'Customer support'
-      ],
-      isActive: true
-    },
-    {
-      name: 'Delivery Fee (Outside Lagos)',
-      description: 'Delivery fee for orders outside Lagos state',
-      price: 1000.00,
-      category: 'Delivery',
-      features: [
-        'Nationwide delivery',
-        'Express shipping options',
-        'Tracking and updates',
-        'Delivery confirmation'
-      ],
-      isActive: true
-    },
-    {
-      name: 'Return Fee',
-      description: 'Fee for processing returned items and refunds',
-      price: 200.00,
-      category: 'Returns',
-      features: [
-        'Return processing and inspection',
-        'Refund processing',
-        'Quality assessment',
-        'Restocking or disposal'
-      ],
-      isActive: true
-    },
-    {
-      name: 'Cash On Delivery (Optional)',
-      description: 'Optional COD service for cash collection on delivery',
-      price: 150.00,
-      category: 'Payment',
-      features: [
-        'Cash collection on delivery',
-        'Secure money handling',
-        'Payment verification',
-        'Daily settlement'
-      ],
-      isActive: true
-    },
+    // 'Return Fee' intentionally omitted (deprecated operational charge)
     {
       name: 'Account Management Fee',
       description: 'Monthly fee for dedicated account management and support',
@@ -285,19 +208,6 @@ export async function ensureSJServices() {
         'Monthly performance reports',
         'Strategic planning support',
         'Priority customer support'
-      ],
-      isActive: true
-    },
-    {
-      name: 'Cargo Shipment',
-      description: 'Fee for bulk cargo and freight shipment services',
-      price: 5000.00,
-      category: 'Logistics',
-      features: [
-        'Bulk cargo handling',
-        'Freight forwarding',
-        'Customs clearance support',
-        'End-to-end logistics management'
       ],
       isActive: true
     }

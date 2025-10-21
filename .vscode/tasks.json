@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Type check",
+			"type": "shell",
+			"command": "npm run type-check",
+			"problemMatcher": [
+				"$tsc"
+			]
+		}
+	]
+}

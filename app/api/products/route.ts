@@ -105,35 +105,45 @@ export const POST = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF'],
     const body = await request.json()
     
     // Set merchant ID
-    const merchantId = user.role === 'SJFS_ADMIN' ? body.merchantId : user.merchantId
-    if (!merchantId) {
-      return createErrorResponse('Merchant ID is required', 400)
+    let merchantId: string | undefined
+    if (user.role === 'SJFS_ADMIN') {
+      // For admins, merchantId is optional - they can create their own products
+      merchantId = body.merchantId || undefined
+    } else {
+      // For non-admin users, use their merchantId (required)
+      merchantId = user.merchantId
+      if (!merchantId) {
+        return createErrorResponse('Merchant ID is required', 400)
+      }
     }
 
-    // Get merchant's primary warehouse for SKU generation
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
-      include: {
-        warehouses: {
-          where: { isActive: true },
-          orderBy: { createdAt: 'asc' },
-          take: 1
+    // Get merchant's primary warehouse for SKU generation (if merchant is specified)
+    let merchant = null
+    if (merchantId) {
+      merchant = await prisma.merchant.findUnique({
+        where: { id: merchantId },
+        include: {
+          warehouses: {
+            where: { isActive: true },
+            orderBy: { createdAt: 'asc' },
+            take: 1
+          }
         }
-      }
-    })
+      })
 
-    if (!merchant) {
-      return createErrorResponse('Merchant not found', 404)
+      if (!merchant) {
+        return createErrorResponse('Merchant not found', 404)
+      }
     }
 
     // Generate auto SKU if not provided
     let sku = body.sku
     if (!sku) {
-      const warehouseCode = merchant.warehouses[0]?.city || merchant.city || 'Lagos'
+      const warehouseCode = merchant?.warehouses[0]?.city || merchant?.city || 'ADMIN'
       sku = await SKUGenerator.generateSKU({
         warehouseCode,
         category: body.category,
-        merchantId
+        merchantId: merchantId || 'admin'
       })
     }
 
@@ -159,14 +169,19 @@ export const POST = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF'],
     // Validate the data
     const validatedData = createProductSchema.parse(productDataWithoutQuantity)
 
-    // Create product
+    // Create product - handle optional merchant for admins
+    const createData: any = {
+      ...validatedData
+    }
+    
+    if (merchantId) {
+      createData.merchant = {
+        connect: { id: merchantId }
+      }
+    }
+
     const newProduct = await prisma.product.create({
-      data: {
-        ...validatedData,
-        merchant: {
-          connect: { id: merchantId }
-        }
-      },
+      data: createData,
       include: {
         merchant: {
           select: {

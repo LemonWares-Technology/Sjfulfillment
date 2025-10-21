@@ -16,6 +16,7 @@ import {
   BuildingStorefrontIcon
 } from '@heroicons/react/24/outline'
 import ServiceGate from '@/app/components/service-gate'
+import ServiceGateGroup from '@/app/components/service-gate-group'
 
 interface AnalyticsData {
   overview: {
@@ -265,7 +266,10 @@ export default function AnalyticsPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <ServiceGate serviceName="Analytics Dashboard">
+              <ServiceGateGroup 
+                serviceName="Analytics Dashboard"
+                buttonLabel="Subscribe to Analytics Dashboard"
+              >
                 <button
                   onClick={() => exportReport('excel', 'general')}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-[5px] flex items-center"
@@ -273,8 +277,6 @@ export default function AnalyticsPage() {
                   <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
                   Export Excel
                 </button>
-              </ServiceGate>
-              <ServiceGate serviceName="Analytics Dashboard">
                 <button
                   onClick={() => exportReport('pdf', 'general')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-[5px] flex items-center"
@@ -282,9 +284,7 @@ export default function AnalyticsPage() {
                   <DocumentTextIcon className="h-4 w-4 mr-2" />
                   Export PDF
                 </button>
-              </ServiceGate>
-              {user?.role === 'SJFS_ADMIN' && (
-                <ServiceGate serviceName="Analytics Dashboard">
+                {user?.role === 'SJFS_ADMIN' && (
                   <button
                     onClick={() => generateComprehensiveReport('pdf')}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-[5px] flex items-center"
@@ -292,8 +292,8 @@ export default function AnalyticsPage() {
                     <BuildingStorefrontIcon className="h-4 w-4 mr-2" />
                     Comprehensive Report
                   </button>
-                </ServiceGate>
-              )}
+                )}
+              </ServiceGateGroup>
             </div>
           </div>
         </div>

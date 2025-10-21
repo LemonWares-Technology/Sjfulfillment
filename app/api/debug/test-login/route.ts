@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       role: user.role,
-      merchantId: user.merchantId
+      merchantId: user.merchantId || undefined
     })
     console.log('🧪 Token generated:', !!token)
 

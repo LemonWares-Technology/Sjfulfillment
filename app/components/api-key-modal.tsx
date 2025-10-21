@@ -31,9 +31,10 @@ interface ApiKeyModalProps {
   onClose: () => void
   onSave: () => void
   apiKey?: ApiKey | null
+  merchantId?: string // For admin creating keys for specific merchants
 }
 
-export default function ApiKeyModal({ isOpen, onClose, onSave, apiKey }: ApiKeyModalProps) {
+export default function ApiKeyModal({ isOpen, onClose, onSave, apiKey, merchantId }: ApiKeyModalProps) {
   const { post, put, loading } = useApi()
   const [formData, setFormData] = useState({
     name: '',
@@ -43,7 +44,8 @@ export default function ApiKeyModal({ isOpen, onClose, onSave, apiKey }: ApiKeyM
       inventory: { read: false, write: false },
       webhooks: { read: false, write: false }
     },
-    rateLimit: 1000
+    rateLimit: 1000,
+    merchantId: merchantId || undefined
   })
   const [showSecretKey, setShowSecretKey] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
@@ -56,7 +58,8 @@ export default function ApiKeyModal({ isOpen, onClose, onSave, apiKey }: ApiKeyM
       setFormData({
         name: apiKey.name,
         permissions: apiKey.permissions,
-        rateLimit: apiKey.rateLimit
+        rateLimit: apiKey.rateLimit,
+        merchantId: merchantId || undefined
       })
       setCreatedApiKey(null)
       setShowSuccess(false)
@@ -69,13 +72,14 @@ export default function ApiKeyModal({ isOpen, onClose, onSave, apiKey }: ApiKeyM
           inventory: { read: false, write: false },
           webhooks: { read: false, write: false }
         },
-        rateLimit: 1000
+        rateLimit: 1000,
+        merchantId: merchantId || undefined
       })
       setCreatedApiKey(null)
       setShowSuccess(false)
     }
     setErrors({})
-  }, [apiKey, isOpen])
+  }, [apiKey, isOpen, merchantId])
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {}

@@ -138,7 +138,7 @@ export async function sendWelcomePartnerEmail(params: {
 }): Promise<void> {
   const { to, partnerName, companyName, email, password } = params
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
-  const loginUrl = `${baseUrl}/welcome`
+  const loginUrl = `${baseUrl}/login`
   const displayName = partnerName || companyName || 'there'
 
   const content = `
@@ -205,36 +205,37 @@ export async function sendWelcomeMerchantEmail(params: {
   businessName?: string
   firstName?: string
   email: string
-  password: string
 }): Promise<void> {
-  const { to, businessName, firstName, email, password } = params
+  const { to, businessName, firstName, email } = params
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
-  const loginUrl = `${baseUrl}/welcome`
+  const loginUrl = `${baseUrl}/login`
   const displayName = businessName || firstName || 'there'
 
   const content = `
     <h1 style="color:#f08c17; font-size:28px; font-weight:bold; margin:0 0 16px; text-align:center;">Welcome to SJFulfillment</h1>
     <p style="color:rgba(255,255,255,0.9); font-size:16px; line-height:1.6; margin:0 0 16px;">Hi ${escapeHtml(displayName)},</p>
-    <p style="color:rgba(255,255,255,0.9); font-size:16px; line-height:1.6; margin:0 0 24px;">Your merchant account has been created successfully. Here are your login credentials:</p>
+    <p style="color:rgba(255,255,255,0.9); font-size:16px; line-height:1.6; margin:0 0 24px;">Welcome to SJFulfillment! Your merchant account has been created successfully and is ready to use.</p>
     <div style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); border-radius:5px; padding:20px; margin:0 0 24px;">
-      <p style="color:rgba(255,255,255,0.9); font-size:14px; margin:0 0 12px;">
-        <strong style="color:#f08c17;">Email:</strong><br/>
+      <p style="color:rgba(255,255,255,0.9); font-size:14px; margin:0;">
+        <strong style="color:#f08c17;">Your Account Email:</strong><br/>
         <span style="color:rgba(255,255,255,0.9);">${escapeHtml(email)}</span>
       </p>
-      <p style="color:rgba(255,255,255,0.9); font-size:14px; margin:0;">
-        <strong style="color:#f08c17;">Temporary Password:</strong><br/>
-        <span style="color:rgba(255,255,255,0.9); font-family:monospace; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:3px; display:inline-block; margin-top:4px;">${escapeHtml(password)}</span>
-      </p>
     </div>
-    <p style="color:rgba(255,255,255,0.9); font-size:16px; line-height:1.6; margin:0 0 24px;">Click the button below to sign in and complete your setup:</p>
+    <p style="color:rgba(255,255,255,0.9); font-size:16px; line-height:1.6; margin:0 0 24px;">You can now sign in with the credentials you provided during registration. Click the button below to get started:</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
         <td align="center" style="padding:0 0 24px;">
-          <a href="${loginUrl}" style="display:inline-block; background:linear-gradient(to right, #f08c17, #ff9f3a); color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; padding:14px 32px; border-radius:5px;">Access Your Dashboard</a>
+          <a href="${loginUrl}" style="display:inline-block; background:linear-gradient(to right, #f08c17, #ff9f3a); color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; padding:14px 32px; border-radius:5px;">Sign In to Your Dashboard</a>
         </td>
       </tr>
     </table>
-    <p style="color:rgba(255,255,255,0.7); font-size:14px; line-height:1.6; margin:0 0 8px;">For security, please change your password after your first login.</p>
+    <p style="color:rgba(255,255,255,0.7); font-size:14px; line-height:1.6; margin:0 0 8px;">Next steps:</p>
+    <ul style="color:rgba(255,255,255,0.7); font-size:14px; line-height:1.8; margin:0 0 16px; padding-left:20px;">
+      <li>Complete your merchant profile</li>
+      <li>Select a service plan that fits your needs</li>
+      <li>Set up your first products and warehouses</li>
+      <li>Start managing your fulfillment operations</li>
+    </ul>
     <p style="color:rgba(255,255,255,0.5); font-size:12px; line-height:1.5; margin:0; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1);">If you didn't create this account, please contact our support team immediately.</p>`
 
   const html = createEmailTemplate('Your SJFulfillment Merchant Account', content)
@@ -250,7 +251,7 @@ export async function sendWelcomeStaffEmail(params: {
 }): Promise<void> {
   const { to, firstName, role, email, password } = params
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
-  const loginUrl = `${baseUrl}/welcome`
+  const loginUrl = `${baseUrl}/login`
   const displayName = firstName || 'there'
   const roleDisplay = role ? role.replace(/_/g, ' ').toLowerCase() : 'staff member'
 

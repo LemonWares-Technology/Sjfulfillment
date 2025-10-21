@@ -7,7 +7,7 @@ import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/out
 
 function PaymentCallbackContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const searchParams: any = useSearchParams()
   const { get } = useApi()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('')
