@@ -133,8 +133,8 @@ export default function MobileMenu() {
       if (!user) return
       
       // SJFS_ADMIN and WAREHOUSE_STAFF have access to all services
+      // No need to setSubscribedServices here; filter logic bypasses service checks for these roles
       if (user.role === 'SJFS_ADMIN' || user.role === 'WAREHOUSE_STAFF') {
-        setSubscribedServices(['Returns Management']) // Add other services as needed
         setServicesLoaded(true)
         return
       }
