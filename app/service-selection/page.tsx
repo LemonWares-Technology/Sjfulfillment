@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/app/lib/auth-context'
 import { useApi } from '@/app/lib/use-api'
@@ -48,7 +48,7 @@ interface SelectedService {
   priceAtSelection: number
 }
 
-export default function ServiceSelectionPage() {
+function ServiceSelectionContent() {
   const router = useRouter()
   const searchParams: any = useSearchParams()
   const { user, loading: authLoading } = useAuth()
@@ -324,5 +324,20 @@ export default function ServiceSelectionPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ServiceSelectionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ServiceSelectionContent />
+    </Suspense>
   )
 }

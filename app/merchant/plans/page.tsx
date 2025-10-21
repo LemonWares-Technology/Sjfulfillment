@@ -3,7 +3,7 @@
 import { useAuth } from '@/app/lib/auth-context'
 import DashboardLayout from '@/app/components/dashboard-layout'
 import { useApi } from '@/app/lib/use-api'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { formatCurrency, formatDate } from '@/app/lib/utils'
 import { useSearchParams } from 'next/navigation'
 import { 
@@ -68,7 +68,7 @@ interface PlanUpdateStatus {
  * This provides seamless navigation from gated features to the subscription page.
  */
 
-export default function PlanManagementPage() {
+function PlanManagementContent() {
   const { user } = useAuth()
   const { get, post, put, loading } = useApi()
   const searchParams: any = useSearchParams() // Get query parameters for service highlighting
@@ -573,5 +573,21 @@ export default function PlanManagementPage() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function PlanManagementPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout userRole="MERCHANT_ADMIN">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-amber-500"></div>
+          </div>
+        </div>
+      </DashboardLayout>
+    }>
+      <PlanManagementContent />
+    </Suspense>
   )
 }
