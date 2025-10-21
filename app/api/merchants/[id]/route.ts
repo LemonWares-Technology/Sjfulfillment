@@ -445,56 +445,178 @@ export const DELETE = withRole(
 
       // PERMANENT DELETION - Delete all associated data first (cascade)
       
-      // 1. Delete all staff users (with full cascade)
+      // 1. Get all orders for this merchant (needed for cascading deletes)
+      const merchantOrders = await prisma.order.findMany({
+        where: { merchantId },
+        select: { id: true }
+      });
+      const orderIds = merchantOrders.map(o => o.id);
+
+      console.log(`Found ${orderIds.length} orders to delete for merchant ${merchantId}`);
+
+      // 2. Delete order-related data
+      if (orderIds.length > 0) {
+        // Delete order items
+        await prisma.orderItem.deleteMany({
+          where: { orderId: { in: orderIds } }
+        });
+
+        // Delete order status history
+        await prisma.orderStatusHistory.deleteMany({
+          where: { orderId: { in: orderIds } }
+        });
+
+        // Delete order splits
+        await prisma.orderSplit.deleteMany({
+          where: { originalOrderId: { in: orderIds } }
+        });
+
+        // Delete returns
+        await prisma.return.deleteMany({
+          where: { orderId: { in: orderIds } }
+        });
+
+        // Delete refund requests
+        await prisma.refundRequest.deleteMany({
+          where: { orderId: { in: orderIds } }
+        });
+
+        // Finally delete all orders
+        await prisma.order.deleteMany({
+          where: { id: { in: orderIds } }
+        });
+      }
+
+      // 3. Get all products for this merchant
+      const merchantProducts = await prisma.product.findMany({
+        where: { merchantId },
+        select: { id: true }
+      });
+      const productIds = merchantProducts.map(p => p.id);
+
+      console.log(`Found ${productIds.length} products to delete for merchant ${merchantId}`);
+
+      // 4. Delete product-related data
+      if (productIds.length > 0) {
+        // Delete stock movements first (depends on stock items)
+        const stockItems = await prisma.stockItem.findMany({
+          where: { productId: { in: productIds } },
+          select: { id: true }
+        });
+        const stockItemIds = stockItems.map(si => si.id);
+
+        if (stockItemIds.length > 0) {
+          await prisma.stockMovement.deleteMany({
+            where: { stockItemId: { in: stockItemIds } }
+          });
+
+          // Delete stock items
+          await prisma.stockItem.deleteMany({
+            where: { id: { in: stockItemIds } }
+          });
+        }
+
+        // Delete serial numbers
+        await prisma.serialNumber.deleteMany({
+          where: { productId: { in: productIds } }
+        });
+
+        // Finally delete all products
+        await prisma.product.deleteMany({
+          where: { id: { in: productIds } }
+        });
+      }
+
+      // 5. Delete all staff users (with full cascade)
       const staffUsers = existingMerchant.users.filter(u => 
         u.role === 'MERCHANT_STAFF' || u.role === 'MERCHANT_ADMIN'
       );
 
       console.log(`Deleting ${staffUsers.length} staff users for merchant ${merchantId}`);
       for (const staffUser of staffUsers) {
-        // Delete notifications
-        await prisma.notification.deleteMany({
-          where: { recipientId: staffUser.id }
-        });
-        
-        // Delete password reset tokens
-        await prisma.passwordResetToken.deleteMany({
-          where: { userId: staffUser.id }
-        });
-        
+        // Clean up user-related records that enforce FK constraints
+        // 1) Active sessions
+        await prisma.userSession.deleteMany({ where: { userId: staffUser.id } })
+
+        // 2) Notifications
+        await prisma.notification.deleteMany({ where: { recipientId: staffUser.id } })
+
+        // 3) Password reset tokens
+        await prisma.passwordResetToken.deleteMany({ where: { userId: staffUser.id } })
+
+        // 4) Audit logs – detach user reference
+        await prisma.auditLog.updateMany({
+          where: { userId: staffUser.id },
+          data: { userId: null }
+        })
+
         // Finally delete the user
-        await prisma.user.delete({
-          where: { id: staffUser.id }
-        });
-        console.log(`Permanently deleted user ${staffUser.email} and their related data`);
+        await prisma.user.delete({ where: { id: staffUser.id } })
+        console.log(`Permanently deleted user ${staffUser.email} and their related data`)
       }
 
-      // 2. Delete API keys
+      // 6. Delete API keys and logs
+      const apiKeys = await prisma.apiKey.findMany({
+        where: { merchantId },
+        select: { id: true }
+      });
+      const apiKeyIds = apiKeys.map(ak => ak.id);
+
+      if (apiKeyIds.length > 0) {
+        await prisma.apiLog.deleteMany({
+          where: { apiKeyId: { in: apiKeyIds } }
+        });
+      }
+
       await prisma.apiKey.deleteMany({
         where: { merchantId }
       });
 
-      // 3. Delete webhooks
+      // 7. Delete webhooks and logs
+      const webhooks = await prisma.webhook.findMany({
+        where: { merchantId },
+        select: { id: true }
+      });
+      const webhookIds = webhooks.map(w => w.id);
+
+      if (webhookIds.length > 0) {
+        await prisma.webhookLog.deleteMany({
+          where: { webhookId: { in: webhookIds } }
+        });
+      }
+
       await prisma.webhook.deleteMany({
         where: { merchantId }
       });
 
-      // 4. Delete merchant service subscriptions
-      await prisma.merchantServiceSubscription.deleteMany({
-        where: { merchantId }
+      // 8. Delete subscription addons first, then subscriptions
+      const subscriptions = await prisma.subscription.findMany({
+        where: { merchantId },
+        select: { id: true }
       });
+      const subscriptionIds = subscriptions.map(s => s.id);
 
-      // 5. Delete subscriptions
+      if (subscriptionIds.length > 0) {
+        await prisma.subscriptionAddon.deleteMany({
+          where: { subscriptionId: { in: subscriptionIds } }
+        });
+      }
+
       await prisma.subscription.deleteMany({
         where: { merchantId }
       });
 
-      // 6. Delete billing records
+      // 9. Delete merchant service subscriptions
+      await prisma.merchantServiceSubscription.deleteMany({
+        where: { merchantId }
+      });
+
+      // 10. Delete billing records
       await prisma.billingRecord.deleteMany({
         where: { merchantId }
       });
 
-      // 7. Delete the merchant record (HARD DELETE - PERMANENT)
+      // 11. Delete the merchant record (HARD DELETE - PERMANENT)
       console.log(`PERMANENTLY DELETING merchant ${merchantId}: ${existingMerchant.businessName}`);
       await prisma.merchant.delete({
         where: { id: merchantId }

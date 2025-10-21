@@ -52,7 +52,7 @@ class StockMonitor {
 
       // Group by merchant to send targeted notifications
       const merchantGroups = lowStockItems.reduce((groups, item) => {
-        const merchantId = item.product.merchantId
+        const merchantId: any = item.product.merchantId
         if (!groups[merchantId]) {
           groups[merchantId] = []
         }
@@ -177,7 +177,7 @@ class StockMonitor {
 
       // Group by merchant
       const merchantGroups = expiredItems.reduce((groups, item) => {
-        const merchantId = item.product.merchantId
+        const merchantId: any = item.product.merchantId
         if (!groups[merchantId]) {
           groups[merchantId] = []
         }

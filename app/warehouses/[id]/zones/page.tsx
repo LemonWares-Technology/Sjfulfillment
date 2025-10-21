@@ -66,7 +66,7 @@ export default function WarehouseZonesPage() {
   const { user } = useAuth()
   const { get, delete: deleteZone, loading } = useApi()
   const router = useRouter()
-  const params = useParams()
+  const params: any = useParams()
   const warehouseId = params.id as string
 
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null)

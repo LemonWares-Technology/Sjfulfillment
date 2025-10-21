@@ -67,7 +67,7 @@ async function createStockItems() {
     for (const product of productsWithoutStock) {
       try {
         // Use merchant's warehouse if available, otherwise use fallback
-        const targetWarehouse = product.merchant.warehouses[0] || warehouse
+        const targetWarehouse = product.merchant?.warehouses[0] || warehouse
         
         const stockItem = await prisma.stockItem.create({
           data: {

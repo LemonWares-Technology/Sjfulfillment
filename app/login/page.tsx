@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/lib/auth-context'
-import { EyeIcon, EyeSlashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -43,10 +43,8 @@ export default function LoginPage() {
             await refreshUser()
           }
           
-          // Navigate with a slight delay to ensure auth state is updated
-          setTimeout(() => {
-            window.location.href = navigateToUserDashboard(data.data.user.role)
-          }, 100)
+          // Navigate within SPA to preserve context
+          router.replace(navigateToUserDashboard(data.data.user.role))
         }
       } else {
         toast.error(data.error || 'Login failed')

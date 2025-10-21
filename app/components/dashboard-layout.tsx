@@ -6,7 +6,6 @@ import { useEffect } from 'react'
 import Sidebar from './sidebar'
 import MobileMenu from './mobile-menu'
 import NotificationBell from './notification-bell'
-import ConnectionStatus from './connection-status'
 import Image from 'next/image'
 
 interface DashboardLayoutProps {
@@ -14,20 +13,20 @@ interface DashboardLayoutProps {
   userRole: string
 }
 
-export default function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
-  const { user, logout } = useAuth()
+export default function DashboardLayout({ children, userRole: _userRole }: DashboardLayoutProps) {
+  const { user, logout, loading } = useAuth()
   const router = useRouter()
 
   // Simplified: just check if user is logged in
   // Remove the problematic role-based redirect that was breaking navigation
   useEffect(() => {
-    if (!user) {
-      // Only redirect to login if no user at all
+    // Wait for auth to finish loading before deciding
+    if (!loading && !user) {
       router.push('/welcome')
     }
-  }, [user, router])
+  }, [user, loading, router])
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-amber-500"></div>

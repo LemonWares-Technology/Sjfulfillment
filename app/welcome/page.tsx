@@ -74,10 +74,8 @@ export default function WelcomePage() {
             await refreshUser()
           }
           
-          // Navigate with a slight delay to ensure auth state is updated
-          setTimeout(() => {
-            window.location.href = navigateToUserDashboard(data.data.user.role)
-          }, 100)
+          // Navigate within SPA to preserve context
+          router.replace(navigateToUserDashboard(data.data.user.role))
         }
       } else {
         toast.error(data.error || 'Login failed')

@@ -12,8 +12,10 @@ interface Props {
   description?: string
   confirmLabel?: string
   cancelLabel?: string
+  // Text confirmation
   confirmPlaceholder?: string
   expectedText?: string // text user must type to confirm
+  requireTextConfirm?: boolean // when true, show text input and enforce expectedText
   requirePassword?: boolean // when true, ask for a password and pass it to onConfirm
   passwordLabel?: string
   onConfirm: (password?: string) => Promise<void>
@@ -28,6 +30,7 @@ export default function ConfirmDeleteModal({
   cancelLabel = 'Cancel',
   confirmPlaceholder = 'Type to confirm',
   expectedText = 'DELETE',
+  requireTextConfirm = true,
   requirePassword = false,
   passwordLabel = 'Enter your password',
   onConfirm,
@@ -37,9 +40,11 @@ export default function ConfirmDeleteModal({
   const [isProcessing, setIsProcessing] = useState(false)
 
   const handleConfirm = async () => {
-    if (input !== expectedText) {
-      toast.error(`Please type ${expectedText} to confirm`)
-      return
+    if (requireTextConfirm) {
+      if (input !== expectedText) {
+        toast.error(`Please type ${expectedText} to confirm`)
+        return
+      }
     }
 
     if (requirePassword && !password) {
@@ -129,16 +134,18 @@ export default function ConfirmDeleteModal({
                       </div>
                     )}
 
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Confirm</label>
-                      <input
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        placeholder={confirmPlaceholder}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        disabled={isProcessing}
-                      />
-                    </div>
+                    {requireTextConfirm && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Confirm</label>
+                        <input
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          placeholder={confirmPlaceholder}
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          disabled={isProcessing}
+                        />
+                      </div>
+                    )}
 
                   </div>
                 </div>

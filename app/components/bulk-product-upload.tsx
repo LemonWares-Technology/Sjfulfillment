@@ -112,7 +112,7 @@ export default function BulkProductUpload({ isOpen, onClose, onSuccess }: BulkPr
       console.log('Upload result:', result) // Debug log
 
       if (!response.ok) {
-        throw new Error(result.error || 'Upload failed')
+        throw new Error(result.errors?.[0] || 'Upload failed')
       }
 
       setUploadResult(result)
@@ -126,7 +126,8 @@ export default function BulkProductUpload({ isOpen, onClose, onSuccess }: BulkPr
         totalProcessed: 0,
         successful: 0,
         failed: 0,
-        errors: ['Upload failed. Please try again.']
+        errors: ['Upload failed. Please try again.'],
+        createdProducts: []
       })
     } finally {
       setIsUploading(false)

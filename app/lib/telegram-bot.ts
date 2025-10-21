@@ -1,3 +1,4 @@
+import { UserRole } from '../generated/prisma'
 import { prisma } from './prisma'
 
 interface TelegramUser {
@@ -97,7 +98,7 @@ class TelegramBotService {
       // Find all users with the specified role who have Telegram connected
       const users = await prisma.user.findMany({
         where: {
-          role: role,
+          role: role as UserRole,
           telegramId: { not: null },
           isActive: true
         },

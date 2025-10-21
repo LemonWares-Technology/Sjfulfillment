@@ -115,6 +115,7 @@ export default function MerchantDetailPage() {
   const [editingApiKey, setEditingApiKey] = useState<ApiKey | null>(null)
   const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null)
   const [showAdminDeleteModal, setShowAdminDeleteModal] = useState(false)
+  const [showActiveSubsWarning, setShowActiveSubsWarning] = useState(false)
 
   useEffect(() => {
     if (merchantId) {
@@ -249,8 +250,18 @@ export default function MerchantDetailPage() {
     )
   }
 
+  const merchantHasActiveSubscriptions = () => {
+    return (merchant?.merchantServiceSubscriptions || []).some(
+      (sub) => sub.status === 'ACTIVE'
+    )
+  }
+
   const handleDeleteMerchant = () => {
-    setShowAdminDeleteModal(true)
+    if (merchantHasActiveSubscriptions()) {
+      setShowActiveSubsWarning(true)
+    } else {
+      setShowAdminDeleteModal(true)
+    }
   }
 
   const handleAdminDeleteConfirm = async (adminPassword?: string) => {
@@ -305,7 +316,7 @@ export default function MerchantDetailPage() {
               </div>
             </div>
             <button
-              onClick={() => setShowAdminDeleteModal(true)}
+              onClick={handleDeleteMerchant}
               className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
               Delete Merchant
@@ -764,6 +775,22 @@ export default function MerchantDetailPage() {
           merchantId={merchantId}
         />
 
+        {/* Warning: Active subscriptions */}
+        <ConfirmDeleteModal
+          isOpen={showActiveSubsWarning}
+          onClose={() => setShowActiveSubsWarning(false)}
+          onConfirm={async () => {
+            setShowActiveSubsWarning(false)
+            setShowAdminDeleteModal(true)
+          }}
+          title="Active subscriptions detected"
+          description={`This merchant has active subscriptions. Deleting the merchant will permanently remove the merchant and all related data. Active subscriptions will also be removed. Do you want to continue?`}
+          confirmLabel="Continue"
+          cancelLabel="Cancel"
+          requireTextConfirm={false}
+          requirePassword={false}
+        />
+
         <ConfirmDeleteModal
           isOpen={showAdminDeleteModal}
           onClose={() => setShowAdminDeleteModal(false)}
@@ -771,8 +798,7 @@ export default function MerchantDetailPage() {
           title="Delete Merchant Account"
           description={`Are you sure you want to delete ${merchant?.businessName}? This action is permanent and cannot be undone. All associated data including users, products, orders, and subscriptions will be permanently removed.`}
           confirmLabel="Delete Merchant"
-          confirmPlaceholder={`Type ${merchant?.businessName || 'DELETE'} to confirm`}
-          expectedText={merchant?.businessName || 'DELETE'}
+          requireTextConfirm={false}
           requirePassword
           passwordLabel="Enter your admin password"
         />
