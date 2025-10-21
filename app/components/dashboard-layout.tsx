@@ -18,49 +18,14 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
   const { user, logout } = useAuth()
   const router = useRouter()
 
+  // Simplified: just check if user is logged in
+  // Remove the problematic role-based redirect that was breaking navigation
   useEffect(() => {
-    // Only redirect if user is trying to access a page they don't have permission for
-    if (user && user.role !== userRole) {
-      // Check if the current page is accessible by the user's role
-      const currentPath = window.location.pathname
-      const isAccessible = checkPageAccess(user.role, currentPath)
-      
-      if (!isAccessible) {
-        // Redirect to appropriate dashboard based on role
-        switch (user.role) {
-          case 'SJFS_ADMIN':
-            router.push('/admin/dashboard')
-            break
-          case 'MERCHANT_ADMIN':
-            router.push('/merchant/dashboard')
-            break
-          case 'MERCHANT_STAFF':
-            router.push('/staff/dashboard')
-            break
-          case 'WAREHOUSE_STAFF':
-            router.push('/warehouse/dashboard')
-            break
-        }
-      }
+    if (!user) {
+      // Only redirect to login if no user at all
+      router.push('/welcome')
     }
-  }, [user, userRole, router])
-
-  const checkPageAccess = (userRole: string, path: string): boolean => {
-    // SJFS_ADMIN has access to everything
-    if (userRole === 'SJFS_ADMIN') {
-      return true
-    }
-    
-    // Define which pages each role can access
-    const rolePermissions: Record<string, string[]> = {
-      'MERCHANT_ADMIN': ['/merchant', '/analytics', '/products', '/orders', '/returns', '/notifications', '/service-selection', '/merchant-registration-success'],
-      'MERCHANT_STAFF': ['/products', '/orders', '/returns', '/notifications', '/staff'],
-      'WAREHOUSE_STAFF': ['/warehouses', '/logistics', '/orders', '/returns', '/notifications', '/warehouse', '/inventory', '/refund-requests']
-    }
-    
-    const allowedPaths = rolePermissions[userRole] || []
-    return allowedPaths.some(allowedPath => path.startsWith(allowedPath))
-  }
+  }, [user, router])
 
   if (!user) {
     return (
