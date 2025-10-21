@@ -1,10 +1,12 @@
-// Email utility using Nodemailer (SMTP)
+// Email utility using ZeptoMail HTTP API
 // Configure these env vars in your deployment:
-// - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+// - EMAIL_PROVIDER=zeptomail
+// - ZEPTOMAIL_API_KEY (required)
+// - ZEPTOMAIL_API_URL (optional, defaults to ZeptoMail public API)
 // - EMAIL_FROM: Sender, e.g. "SJFulfillment <no-reply@sjfulfillment.com>"
 // - NEXT_PUBLIC_APP_URL or APP_BASE_URL: e.g. https://sjfulfillment.com
 
-import nodemailer from 'nodemailer'
+import axios from 'axios'
 
 type SendEmailParams = {
   to: string | string[]
@@ -12,52 +14,81 @@ type SendEmailParams = {
   html: string
 }
 
-function getTransport() {
-  const host = process.env.SMTP_HOST
-  const portStr = process.env.SMTP_PORT
-  const secureEnv = process.env.SMTP_SECURE
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
+// Nodemailer/SMTP removed — using ZeptoMail HTTP API exclusively.
 
-  const port = portStr ? parseInt(portStr, 10) : 587
-  const secure = typeof secureEnv === 'string' ? secureEnv.toLowerCase() === 'true' : (port === 465)
+// Send using ZeptoMail HTTP API
+async function sendViaZeptoMail({ to, subject, html, from }: SendEmailParams & { from: string }) {
+  const apiKey = process.env.ZEPTOMAIL_API_KEY?.trim()
+  const apiUrl = process.env.ZEPTOMAIL_API_URL || 'https://api.zeptomail.com/v1.1/email'
 
-  if (!host || !user || !pass) {
-    console.warn('SMTP env vars not fully set; skipping email send')
-    return null
+  if (!apiKey) {
+    throw new Error('ZeptoMail API key not set (ZEPTOMAIL_API_KEY)')
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass }
-  })
+  // Parse the from field: "Name <email@domain.com>" or just "email@domain.com"
+  let fromEmail = from
+  let fromName = 'SJFulfillment'
+  const fromMatch = from.match(/^(.+?)\s*<([^>]+)>$/)
+  if (fromMatch) {
+    fromName = fromMatch[1].trim()
+    fromEmail = fromMatch[2].trim()
+  }
+
+  // ZeptoMail API v1.1 requires this exact structure
+  const recipients = Array.isArray(to) ? to : [to]
+  const payload = {
+    from: {
+      address: fromEmail,
+      name: fromName
+    },
+    to: recipients.map(email => ({
+      email_address: {
+        address: email,
+        name: email.split('@')[0] // simple fallback name
+      }
+    })),
+    subject,
+    htmlbody: html
+  }
+
+  try {
+    console.log('Sending email via ZeptoMail...', { 
+      to: recipients, 
+      subject, 
+      from: fromEmail,
+      fromName,
+      apiUrl,
+      apiKeyPrefix: apiKey.substring(0, 20) + '...' // Log prefix for debugging
+    })
+    
+    const res = await axios.post(apiUrl, payload, {
+      headers: {
+        Authorization: apiKey, // ZeptoMail uses the key directly, not "Bearer"
+        'Content-Type': 'application/json'
+      },
+      timeout: 15000
+    })
+
+    console.log('ZeptoMail response status:', res.status)
+    return res.data
+  } catch (err: any) {
+    console.error('Error sending email via ZeptoMail:', err && err.response ? err.response.data || err.response.statusText : err.message || err)
+    
+    // Provide helpful error messages
+    if (err?.response?.status === 401) {
+      console.error('ZeptoMail 401: Check your ZEPTOMAIL_API_KEY is correct and active')
+    } else if (err?.response?.status === 403) {
+      console.error('ZeptoMail 403: Check your sender domain is verified in ZeptoMail console')
+    }
+    
+    throw err
+  }
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<void> {
-  const transporter = getTransport()
   const from = process.env.EMAIL_FROM || 'SJFulfillment <no-reply@sjfulfillment.com>'
-
-  if (!transporter) return
-
-  // Add List-Unsubscribe header for better deliverability
-  // Use a mailto: link or a URL to an unsubscribe page if you have one
-  const listUnsubscribe = `mailto:${from.replace(/.*<|>/g, '')}`
-
-  try {
-    await transporter.sendMail({
-      from,
-      to,
-      subject,
-      html,
-      headers: {
-        'List-Unsubscribe': `<${listUnsubscribe}>`
-      }
-    })
-  } catch (err) {
-    console.error('Error sending email via SMTP (nodemailer):', err)
-  }
+  // Use ZeptoMail exclusively
+  await sendViaZeptoMail({ to, subject, html, from })
 }
 
 // Helper to create the email template wrapper with black background and glass effect

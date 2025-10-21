@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useApi } from '@/app/lib/use-api'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 
 function ResetPasswordContent() {
   const router = useRouter()
@@ -18,6 +19,7 @@ function ResetPasswordContent() {
   const [token, setToken] = useState('')
 
   useEffect(() => {
+    if (!searchParams) return
     const tokenParam = searchParams.get('token')
     if (!tokenParam) {
       router.push('/login')
@@ -47,7 +49,7 @@ function ResetPasswordContent() {
       })
       setSuccess(true)
       setTimeout(() => {
-        router.push('/login')
+        router.push('/welcome')
       }, 3000)
     } catch (error) {
       setError('Failed to reset password. Please try again.')
@@ -56,119 +58,136 @@ function ResetPasswordContent() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Password Reset Successful
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Your password has been reset successfully. You will be redirected to the login page shortly.
-            </p>
+      <div className="w-full min-h-screen flex items-center flex-col justify-center text-white bg-[#0A0A0A]">
+        <div>
+          <Image 
+            src="https://sjfulfillment.com/wp-content/uploads/2020/09/cropped-Main-Logo-white-886x.png"
+            loading="lazy" 
+            alt="SJFulfillment Logo" 
+            height={120} 
+            width={150} 
+            className="object-cover" 
+          />
+        </div>
+        <div className="my-5" />
+        
+        <div className="w-[500px] max-md:w-[95%] flex flex-col items-center px-8 py-8 rounded-[5px] bg-white/10 backdrop-blur-md h-auto">
+          <div className="mx-auto h-12 w-12 bg-white/20 rounded-full flex items-center justify-center mb-4">
+            <svg className="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
+          <h2 className="text-2xl font-semibold text-[#f08c17] tracking-wide">
+            Password Reset Successful
+          </h2>
+          <p className="mt-4 text-sm text-white/80 text-center">
+            Your password has been reset successfully. You will be redirected to the login page shortly.
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Reset Your Password
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Enter your new password below
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                New Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm pr-10"
-                  placeholder="Enter new password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
+    <div className="w-full min-h-screen flex items-center flex-col justify-center text-white bg-[#0A0A0A]">
+      <div>
+        <Image 
+          src="https://sjfulfillment.com/wp-content/uploads/2020/09/cropped-Main-Logo-white-886x.png"
+          loading="lazy" 
+          alt="SJFulfillment Logo" 
+          height={120} 
+          width={150} 
+          className="object-cover" 
+        />
+      </div>
+      <div className="my-5" />
+      
+      <div className="w-[500px] max-md:w-[95%] flex flex-col items-center px-4 py-6 rounded-[5px] bg-white/10 backdrop-blur-md h-auto">
+        <div className="text-2xl tracking-wide font-semibold mb-2 text-[#f08c17]">Reset Your Password</div>
+        <p className="text-sm text-white/70 mb-6 text-center">
+          Enter your new password below
+        </p>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm New Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm pr-10"
-                  placeholder="Confirm new password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-white/90 mb-1">
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-[40px] border-[#F08C17] border rounded-[5px] bg-white/5 px-3 pr-10 text-[#F08C17] placeholder:text-[#F08C17]/60 focus:outline-none focus:border-[#F08C17] focus:bg-white/10"
+                placeholder="Enter new password"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5 text-[#F08C17]/60" />
+                ) : (
+                  <EyeIcon className="h-5 w-5 text-[#F08C17]/60" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-white/90 mb-1">
+              Confirm New Password
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full h-[40px] border-[#F08C17] border rounded-[5px] bg-white/5 px-3 pr-10 text-[#F08C17] placeholder:text-[#F08C17]/60 focus:outline-none focus:border-[#F08C17] focus:bg-white/10"
+                placeholder="Confirm new password"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeSlashIcon className="h-5 w-5 text-[#F08C17]/60" />
+                ) : (
+                  <EyeIcon className="h-5 w-5 text-[#F08C17]/60" />
+                )}
+              </button>
             </div>
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className="rounded-[5px] bg-red-500/20 border border-red-500/30 p-3">
+              <div className="text-sm text-red-200">{error}</div>
             </div>
           )}
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-[5px] text-white bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center pt-2">
             <button
               type="button"
-              onClick={() => router.push('/login')}
-              className="text-sm text-amber-600 hover:text-amber-500"
+              onClick={() => router.push('/welcome')}
+              className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
             >
               Back to Login
             </button>
@@ -182,10 +201,10 @@ function ResetPasswordContent() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#0A0A0A]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Loading...</p>
+          <p className="text-lg text-white/70">Loading...</p>
         </div>
       </div>
     }>

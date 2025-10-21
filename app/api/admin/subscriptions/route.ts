@@ -54,6 +54,7 @@ export const GET = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: J
                 select: {
                   amount: true,
                   status: true,
+                  billingType: true,
                 }
               }
             }
@@ -75,23 +76,15 @@ export const GET = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: J
 
     // Calculate accumulated charges for each merchant
     const subscriptionsWithCharges = subscriptions.map(subscription => {
-      const merchant = subscription.merchant
-      const totalCharges = merchant.billingRecords.reduce((sum, record) => {
-        return sum + Number(record.amount)
-      }, 0)
-      
-      const paidCharges = merchant.billingRecords
-        .filter(record => record.status === "PAID")
-        .reduce((sum, record) => sum + Number(record.amount), 0)
-      
-      const pendingCharges = merchant.billingRecords
-        .filter(record => record.status === "PENDING")
-        .reduce((sum, record) => sum + Number(record.amount), 0)
-      
-      const overdueCharges = merchant.billingRecords
-        .filter(record => record.status === "OVERDUE")
-        .reduce((sum, record) => sum + Number(record.amount), 0)
-
+      const merchant = subscription.merchant;
+      // Only include DAILY_SERVICE_FEE charges
+      const serviceCharges = merchant.billingRecords.filter(
+        record => record.billingType === 'DAILY_SERVICE_FEE'
+      );
+      const totalCharges = serviceCharges.reduce((sum, record) => sum + Number(record.amount), 0);
+      const paidCharges = serviceCharges.filter(r => r.status === 'PAID').reduce((sum, r) => sum + Number(r.amount), 0);
+      const pendingCharges = serviceCharges.filter(r => r.status === 'PENDING').reduce((sum, r) => sum + Number(r.amount), 0);
+      const overdueCharges = serviceCharges.filter(r => r.status === 'OVERDUE').reduce((sum, r) => sum + Number(r.amount), 0);
       return {
         ...subscription,
         merchant: {
@@ -103,8 +96,8 @@ export const GET = withRole(['SJFS_ADMIN'], async (request: NextRequest, user: J
             overdue: overdueCharges,
           },
         },
-      }
-    })
+      };
+    });
 
     return createResponse(
       {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { PhoneIcon, VideoCameraIcon } from '@heroicons/react/24/outline'
-import TelegramCallModal from './telegram-call-modal'
+import CallModal from './call-modal'
 
 interface CallButtonProps {
   contactInfo: {
@@ -66,12 +66,19 @@ export default function CallButton({
         ) : null}
       </div>
 
-        <TelegramCallModal
-        isOpen={isCallModalOpen}
-        onClose={() => setIsCallModalOpen(false)}
-        contactInfo={contactInfo}
-        callType={callType}
-      />
+      {isCallModalOpen && (
+        <CallModal
+          isOpen={isCallModalOpen}
+          onClose={() => setIsCallModalOpen(false)}
+          callType={callType}
+          contactInfo={{
+            name: contactInfo.name,
+            phone: contactInfo.phone,
+            email: contactInfo.email || '',
+            role: contactInfo.role || 'Contact'
+          }}
+        />
+      )}
     </>
   )
 }

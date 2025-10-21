@@ -751,3 +751,39 @@ model Notification {
   
   @@map("notifications")
 }
+
+model CallLog {
+  id              String     @id @default(cuid())
+  callSid         String     @unique
+  to              String
+  from            String
+  type            CallType
+  status          CallStatus @default(INITIATED)
+  customerName    String
+  customerRole    String?
+  notificationType NotificationType?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  endedAt         DateTime?
+  duration        Int?
+  recordingUrl    String?
+  metadata        Json?
+
+  @@map("call_logs")
+}
+
+enum CallType {
+  VOICE
+  VIDEO
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NO_ANSWER
+  BUSY
+  CANCELLED
+}

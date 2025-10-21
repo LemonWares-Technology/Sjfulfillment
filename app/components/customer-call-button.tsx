@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import { PhoneIcon, VideoCameraIcon } from '@heroicons/react/24/outline'
-import TelegramCallModal from './telegram-call-modal'
+import CallModal from './call-modal'
 
 interface CustomerCallButtonProps {
   customer: {
@@ -46,7 +46,7 @@ export default function CustomerCallButton({ customer, type, className, orderNum
         )}
       </button>
       {isCallModalOpen && (
-        <TelegramCallModal
+        <CallModal
           isOpen={isCallModalOpen}
           onClose={handleEndCall}
           callType={type}
@@ -55,7 +55,6 @@ export default function CustomerCallButton({ customer, type, className, orderNum
             phone: customer.phone,
             email: customer.email,
             role: orderNumber ? `Customer (Order #${orderNumber})` : 'Customer'
-
           }}
         />
       )}

@@ -48,13 +48,19 @@ export const POST = async (request: NextRequest) => {
     })
 
     // Send password reset email
-    sendPasswordResetEmail({
-      to: user.email,
-      firstName: user.firstName || undefined,
-      resetToken
-    }).catch(err => {
-      console.error('Failed to send password reset email:', err)
-    })
+    console.log('Attempting to send password reset email to:', user.email);
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        firstName: user.firstName || undefined,
+        resetToken
+      });
+      console.log('Password reset email sent successfully');
+    } catch (err) {
+      console.error('Failed to send password reset email:', err);
+      // Don't expose the error to the client, but log it for debugging
+      console.error('Detailed error:', err);
+    }
 
     return createResponse(
       { 

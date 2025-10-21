@@ -152,7 +152,33 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF', 'LOGISTICS_PARTNER
       await prisma.order.update({
         where: { id: orderId },
         data: { deliveredAt: new Date() }
-      })
+      });
+      // After marking as DELIVERED, create DAILY_SERVICE_FEE billing record for merchant
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: existingOrder.merchantId },
+        select: { id: true }
+      });
+      const activeSubscription = await prisma.subscription.findFirst({
+        where: {
+          merchantId: existingOrder.merchantId,
+          status: 'ACTIVE'
+        },
+        select: { id: true, servicePlan: { select: { basePrice: true } } }
+      });
+      if (merchant && activeSubscription) {
+        await prisma.billingRecord.create({
+          data: {
+            merchantId: merchant.id,
+            subscriptionId: activeSubscription.id,
+            billingType: 'DAILY_SERVICE_FEE',
+            description: `Daily service fee for delivered order ${existingOrder.orderNumber}`,
+            amount: activeSubscription.servicePlan.basePrice,
+            dueDate: new Date(),
+            status: 'PENDING',
+            referenceNumber: existingOrder.orderNumber
+          }
+        });
+      }
     }
 
     // Log the change
@@ -166,7 +192,7 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF', 'LOGISTICS_PARTNER
         entityId: orderId,
         newValues: updateData
       }
-    })
+    });
 
     // Send notifications based on status change
     try {
@@ -227,6 +253,8 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF', 'LOGISTICS_PARTNER
     }
     return createErrorResponse('Failed to update order', 500)
   }
+  // Ensure a NextResponse is always returned
+  return createErrorResponse('Unknown error', 500)
 })
 
 // POST /api/orders/[id]/split

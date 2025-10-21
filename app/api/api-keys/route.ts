@@ -116,19 +116,21 @@ export const POST = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN'], async (request: N
       return createErrorResponse('Merchant ID is required', 400)
     }
 
-    // Check if merchant has API service subscription
-    const hasApiService = await prisma.merchantServiceSubscription.findFirst({
-      where: {
-        merchantId: targetMerchantId,
-        status: 'ACTIVE',
-        service: {
-          name: 'API Access'
+    // Check if merchant has API service subscription (skip for platform admins)
+    if (user.role !== 'SJFS_ADMIN') {
+      const hasApiService = await prisma.merchantServiceSubscription.findFirst({
+        where: {
+          merchantId: targetMerchantId,
+          status: 'ACTIVE',
+          service: {
+            name: 'API Access'
+          }
         }
-      }
-    })
+      })
 
-    if (!hasApiService) {
-      return createErrorResponse('API Access service subscription required', 403)
+      if (!hasApiService) {
+        return createErrorResponse('API Access service subscription required', 403)
+      }
     }
 
     // Generate API key pair

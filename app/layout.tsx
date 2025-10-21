@@ -15,6 +15,17 @@ const redHatDisplay = Red_Hat_Display({
 export const metadata: Metadata = {
   title: "SJFulfillment Platform",
   description: "Complete fulfillment management platform",
+  icons: {
+      // Prefer explicit external logo for search engines (SEO), fall back to local
+      icon: process.env.NEXT_PUBLIC_LOGO_URL || "/favicon.ico",
+      shortcut: process.env.NEXT_PUBLIC_LOGO_URL || "/favicon.ico",
+      apple: process.env.NEXT_PUBLIC_LOGO_URL || "/apple-touch-icon.png",
+      other: [
+        { rel: 'icon', url: process.env.NEXT_PUBLIC_LOGO_URL || '/favicon-192.png', sizes: '192x192' },
+        { rel: 'icon', url: process.env.NEXT_PUBLIC_LOGO_URL || '/favicon-256.png', sizes: '256x256' },
+        { rel: 'icon', url: process.env.NEXT_PUBLIC_LOGO_URL || '/favicon-512.png', sizes: '512x512' },
+      ],
+  },
 };
 
 export default function RootLayout({
