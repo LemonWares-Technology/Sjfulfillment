@@ -25,6 +25,7 @@ export default function NotificationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [error, setError] = useState<string | null>(null)
 
   const { callApi } = useApi()
   const { user } = useAuth()
@@ -32,14 +33,28 @@ export default function NotificationsPage() {
   const fetchNotifications = async (page: number = 1, unreadOnly: boolean = false) => {
     try {
       setLoading(true)
-      const response = await callApi(`/api/notifications?limit=20&offset=${(page - 1) * 20}&unreadOnly=${unreadOnly}`)
-      if (response.success) {
-        setNotifications(response.data.notifications)
-        setUnreadCount(response.data.unreadCount)
-        setTotalPages(Math.ceil(response.data.total / 20))
+        setError(null)
+      console.log('📱 [Client] Fetching notifications - page:', page, 'unreadOnly:', unreadOnly)
+      console.log('📱 [Client] Current user:', user)
+      
+      const data = await callApi<{ notifications: Notification[]; unreadCount: number; total: number }>(`/api/notifications?limit=20&offset=${(page - 1) * 20}`)
+
+      console.log('📱 [Client] Data:', data)
+      console.log('📱 [Client] Notifications received:', data.notifications?.length)
+      console.log('📱 [Client] Unread count:', data.unreadCount)
+      console.log('📱 [Client] Total:', data.total)
+      
+      if (data.notifications?.length > 0) {
+        console.log('📱 [Client] First notification:', data.notifications[0])
       }
+
+      setNotifications(Array.isArray(data.notifications) ? data.notifications : [])
+      setUnreadCount(typeof data.unreadCount === 'number' ? data.unreadCount : 0)
+      setTotalPages(Math.max(1, Math.ceil((data.total || 0) / 20)))
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+      console.error('📱 [Client] Error fetching notifications:', error)
+        setError('Failed to load notifications')
+        setNotifications([])
     } finally {
       setLoading(false)
     }
@@ -83,11 +98,17 @@ export default function NotificationsPage() {
   }
 
   useEffect(() => {
-    const unreadOnly = filter === 'unread'
-    fetchNotifications(currentPage, unreadOnly)
+    console.log('📱 [Client] useEffect triggered - filter:', filter, 'currentPage:', currentPage)
+    // Don't pass unreadOnly - fetch all notifications and filter client-side
+    fetchNotifications(currentPage, false)
   }, [currentPage, filter])
 
   const filteredNotifications = notifications.filter(notification => {
+     // Apply filter
+     if (filter === 'unread' && notification.isRead) return false
+     if (filter === 'read' && !notification.isRead) return false
+    
+     // Apply search
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       return (
@@ -222,6 +243,17 @@ export default function NotificationsPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div>
                 <p className="mt-2 text-white">Loading notifications...</p>
               </div>
+              ) : error ? (
+                <div className="p-8 text-center">
+                  <Bell className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <p className="text-white font-semibold">{error}</p>
+                  <button
+                    onClick={() => fetchNotifications(currentPage, false)}
+                    className="mt-4 px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-[5px] hover:from-amber-600 hover:to-yellow-700"
+                  >
+                    Retry
+                  </button>
+                </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell className="h-12 w-12 text-[#f08c17] mx-auto mb-4" />

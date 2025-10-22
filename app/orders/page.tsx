@@ -5,7 +5,7 @@ import DashboardLayout from '@/app/components/dashboard-layout'
 import { useApi } from '@/app/lib/use-api'
 import { useEffect, useState } from 'react'
 import { formatCurrency, formatDate } from '@/app/lib/utils'
-import { EyeIcon, TruckIcon, PlusIcon, DocumentArrowUpIcon, DocumentTextIcon, ArrowUturnLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, TruckIcon, PlusIcon, DocumentArrowUpIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import SearchBar from '@/app/components/search-bar'
 import FilterSelect from '@/app/components/filter-select'
@@ -17,6 +17,7 @@ import BulkOrderUpload from '@/app/components/bulk-order-upload'
 import RefundRequestModal from '@/app/components/refund-request-modal'
 import ReturnRequestModal from '@/app/components/return-request-modal'
 import Pagination from '@/app/components/pagination'
+import LoadingSpinner from '@/app/components/loading-spinner'
 
 interface Order {
   id: string
@@ -60,12 +61,13 @@ export default function OrdersPage() {
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage] = useState(10)
   const [hasReturnsManagement, setHasReturnsManagement] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   // Check for Returns Management service subscription
   useEffect(() => {
     const checkReturnsService = async () => {
       if (!user) return
-      
+
       // SJFS_ADMIN and WAREHOUSE_STAFF always have access
       if (user.role === 'SJFS_ADMIN' || user.role === 'WAREHOUSE_STAFF') {
         setHasReturnsManagement(true)
@@ -73,7 +75,7 @@ export default function OrdersPage() {
       }
 
       try {
-        const response = await get<{subscriptions: Array<{service: {name: string}, isActive: boolean}>}>('/api/merchant-services/status', { silent: true })
+        const response = await get<{ subscriptions: Array<{ service: { name: string }, isActive: boolean }> }>('/api/merchant-services/status', { silent: true })
         if (response?.subscriptions) {
           const hasService = response.subscriptions.some(
             sub => sub.service.name === 'Returns Management' && sub.isActive
@@ -104,17 +106,18 @@ export default function OrdersPage() {
 
   const fetchOrders = async (bypassCache: boolean = false) => {
     try {
+      setIsLoadingData(true)
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString()
       })
-      
+
       // Add search and filter parameters
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter !== 'ALL') params.append('status', statusFilter);
-      
-      const response = await get<{orders: Order[], pagination: any}>(`/api/orders?${params}`, { cache: !bypassCache })
-      
+
+      const response = await get<{ orders: Order[], pagination: any }>(`/api/orders?${params}`, { cache: !bypassCache })
+
       if (response && response.orders && Array.isArray(response.orders)) {
         setOrders(response.orders)
         setTotalPages(response.pagination?.pages || 1)
@@ -129,6 +132,8 @@ export default function OrdersPage() {
       setOrders([])
       setTotalPages(1)
       setTotalItems(0)
+    } finally {
+      setIsLoadingData(false)
     }
   }
 
@@ -234,7 +239,7 @@ export default function OrdersPage() {
             </div>
             <div>
               <div className="flex space-x-3">
-                <ServiceGateGroup 
+                <ServiceGateGroup
                   serviceName="Order Processing"
                   buttonLabel="Subscribe to access Order Management"
                 >
@@ -292,89 +297,92 @@ export default function OrdersPage() {
         {/* Orders Table */}
         <div className="bg-white/30 shadow overflow-hidden sm:rounded-[5px]">
           <div className="px-4 py-5 sm:p-6">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-white/50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Order
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Items
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className=" divide-y divide-gray-200">
-                  {filteredOrders.map((order) => (
-                    <tr key={order.id} className="">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-white">
-                            {order.orderNumber}
-                          </div>
-                          {user?.role === 'SJFS_ADMIN' && (
-                            <div className="text-sm text-white">
-                              {order.merchant.businessName}
+            {isLoadingData ? (
+              <LoadingSpinner text="Loading orders..." size="lg" className="py-12" />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-white/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Order
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Items
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className=" divide-y divide-gray-200">
+                    {filteredOrders.map((order) => (
+                      <tr key={order.id} className="">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              {order.orderNumber}
                             </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-white">
-                            {order.customerName}
+                            {user?.role === 'SJFS_ADMIN' && (
+                              <div className="text-sm text-white">
+                                {order.merchant.businessName}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-sm text-white">
-                            {order.customerEmail}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              {order.customerName}
+                            </div>
+                            <div className="text-sm text-white">
+                              {order.customerEmail}
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        {order.orderItems.length} items
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                        {formatCurrency(order.totalAmount)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        {formatDate(order.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={() => handleViewOrder(order.id)}
-                            className="text-white hover:text-amber-900"
-                            title="View Order Details"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDownloadReceipt(order.id)}
-                            className="text-white hover:text-green-900"
-                            title="Download Receipt"
-                          >
-                            <DocumentTextIcon className="h-4 w-4" />
-                          </button>
-                          {(user?.role === 'MERCHANT_ADMIN' || user?.role === 'MERCHANT_STAFF') && hasReturnsManagement && (
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                          {order.orderItems.length} items
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                          {formatCurrency(order.totalAmount)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                          {formatDate(order.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleViewOrder(order.id)}
+                              className="text-white hover:text-amber-900"
+                              title="View Order Details"
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDownloadReceipt(order.id)}
+                              className="text-white hover:text-green-900"
+                              title="Download Receipt"
+                            >
+                              <DocumentTextIcon className="h-4 w-4" />
+                            </button>
+                            {/* {(user?.role === 'MERCHANT_ADMIN' || user?.role === 'MERCHANT_STAFF') && hasReturnsManagement && (
                             <>
                               <button 
                                 onClick={() => handleRequestRefund(order)}
@@ -391,60 +399,61 @@ export default function OrdersPage() {
                                 <ArrowPathIcon className="h-4 w-4" />
                               </button>
                             </>
-                          )}
-                          {(user?.role === 'MERCHANT_ADMIN' || user?.role === 'MERCHANT_STAFF') && order.customerPhone && (
-                            <>
-                              <CustomerCallButton
-                                customer={{
-                                  id: `customer-${order.customerEmail}`,
-                                  name: order.customerName,
-                                  phone: order.customerPhone,
-                                  email: order.customerEmail
-                                }}
-                                type="audio"
-                                orderNumber={order.orderNumber}
-                                className="!p-1"
-                              />
-                              <CustomerCallButton
-                                customer={{
-                                  id: `customer-${order.customerEmail}`,
-                                  name: order.customerName,
-                                  phone: order.customerPhone,
-                                  email: order.customerEmail
-                                }}
-                                type="video"
-                                orderNumber={order.orderNumber}
-                                className="!p-1"
-                              />
-                            </>
-                          )}
-                          {order.status === 'CONFIRMED' && (user?.role === 'SJFS_ADMIN' || user?.role === 'WAREHOUSE_STAFF') && (
-                            <ServiceGate serviceName="Order Processing">
-                              <button 
-                                onClick={() => handleProcessOrder(order.id)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Process Order"
-                              >
-                                <TruckIcon className="h-4 w-4" />
-                              </button>
-                            </ServiceGate>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {filteredOrders.length === 0 && !loading && (
+                          )} */}
+                            {(user?.role === 'MERCHANT_ADMIN' || user?.role === 'MERCHANT_STAFF') && order.customerPhone && (
+                              <>
+                                <CustomerCallButton
+                                  customer={{
+                                    id: `customer-${order.customerEmail}`,
+                                    name: order.customerName,
+                                    phone: order.customerPhone,
+                                    email: order.customerEmail
+                                  }}
+                                  type="audio"
+                                  orderNumber={order.orderNumber}
+                                  className="!p-1"
+                                />
+                                <CustomerCallButton
+                                  customer={{
+                                    id: `customer-${order.customerEmail}`,
+                                    name: order.customerName,
+                                    phone: order.customerPhone,
+                                    email: order.customerEmail
+                                  }}
+                                  type="video"
+                                  orderNumber={order.orderNumber}
+                                  className="!p-1"
+                                />
+                              </>
+                            )}
+                            {order.status === 'CONFIRMED' && (user?.role === 'SJFS_ADMIN' || user?.role === 'WAREHOUSE_STAFF') && (
+                              <ServiceGate serviceName="Order Processing">
+                                <button
+                                  onClick={() => handleProcessOrder(order.id)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Process Order"
+                                >
+                                  <TruckIcon className="h-4 w-4" />
+                                </button>
+                              </ServiceGate>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {!isLoadingData && filteredOrders.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-white">No orders found</p>
               </div>
             )}
           </div>
         </div>
-        
+
         {/* Order Modal */}
         <OrderModal
           isOpen={showOrderModal}

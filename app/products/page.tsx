@@ -16,6 +16,7 @@ import ServiceGate from "@/app/components/service-gate";
 import ServiceGateGroup from "@/app/components/service-gate-group";
 import Pagination from "@/app/components/pagination";
 import Image from "next/image";
+import LoadingSpinner from "@/app/components/loading-spinner";
 
 interface Product {
   id: string;
@@ -65,6 +66,7 @@ export default function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage] = useState(10);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     fetchProducts();
@@ -81,6 +83,7 @@ export default function ProductsPage() {
 
   const fetchProducts = async (page: number = currentPage) => {
     try {
+      setIsLoadingData(true);
       // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
@@ -112,6 +115,8 @@ export default function ProductsPage() {
     } catch (error) {
       console.error("Failed to fetch products:", error);
       setProducts([]);
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -301,6 +306,9 @@ export default function ProductsPage() {
         {/* Products Table */}
         <div className="bg-white/30 shadow overflow-hidden sm:rounded-[5px]">
           <div className="px-4 py-5 sm:p-6">
+            {isLoadingData ? (
+              <LoadingSpinner text="Loading products..." size="lg" className="py-12" />
+            ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-white/30 rounded-[5px]">
@@ -424,14 +432,16 @@ export default function ProductsPage() {
                 </tbody>
               </table>
             </div>
+            )}
 
-            {filteredProducts.length === 0 && (
+            {!isLoadingData && filteredProducts.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-white">No products found</p>
               </div>
             )}
 
             {/* Pagination */}
+            {!isLoadingData && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -439,6 +449,7 @@ export default function ProductsPage() {
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
             />
+            )}
           </div>
         </div>
 

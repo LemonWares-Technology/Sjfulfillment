@@ -77,7 +77,7 @@ export function useApi() {
   };
 
   const get = <T = any>(url: string, options?: ApiRequestInit) =>
-    request<T>(url, options);
+    request<T>(url, { ...options, method: 'GET' });
 
   const post = <T = any>(url: string, data?: any) =>
     request<T>(url, {

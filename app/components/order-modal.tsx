@@ -208,7 +208,26 @@ export default function OrderModal({ isOpen, onClose, onSave }: OrderModalProps)
         paymentMethod: 'COD'
       }
 
-      await post('/api/orders', orderData)
+      console.log('📦 Creating order with data:', {
+        customerName: orderData.customerName,
+        customerEmail: orderData.customerEmail,
+        itemCount: orderData.items.length,
+        totalAmount: getTotalAmount()
+      })
+
+      const response = await post('/api/orders', orderData)
+      
+      console.log('✅ Order created successfully:', response)
+      
+      // Show success message
+      if (typeof window !== 'undefined') {
+        const toast = (await import('react-hot-toast')).default
+        toast.success(
+          `Order created successfully! ${customerInfo.email ? 'Confirmation email sent to customer.' : ''}`,
+          { duration: 5000 }
+        )
+      }
+      
       onSave()
       onClose()
       
@@ -217,8 +236,11 @@ export default function OrderModal({ isOpen, onClose, onSave }: OrderModalProps)
       setCustomerInfo({ name: '', email: '', phone: '', address: '' })
       setSelectedWarehouse('')
     } catch (error) {
-      console.error('Failed to create order:', error)
-      alert('Failed to create order. Please try again.')
+      console.error('❌ Failed to create order:', error)
+      if (typeof window !== 'undefined') {
+        const toast = (await import('react-hot-toast')).default
+        toast.error('Failed to create order. Please try again.')
+      }
     }
   }
 

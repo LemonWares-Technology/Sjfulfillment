@@ -5,7 +5,7 @@ import DashboardLayout from '@/app/components/dashboard-layout'
 import { useApi } from '@/app/lib/use-api'
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { formatCurrency, formatDate } from '@/app/lib/utils'
+import { formatCurrency, formatDate, formatDateTime } from '@/app/lib/utils'
 import { 
   ArrowLeftIcon,
   MapPinIcon,
@@ -17,6 +17,7 @@ import {
   ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/solid'
 import ServiceGate from '@/app/components/service-gate'
 import CustomerCallButton from '@/app/components/customer-call-button'
 import toast from 'react-hot-toast'
@@ -319,9 +320,16 @@ export default function OrderDetailsPage() {
                             {history.status}
                           </span>
                         </div>
-                        <p className="text-sm text-white">{formatDate(history.timestamp)}</p>
-                        {history.notes && (
+                        <p className="text-sm text-white">
+                          {formatDateTime((history as any).timestamp || (history as any).createdAt)}
+                        </p>
+                        {history.notes ? (
                           <p className="text-sm text-white mt-1">{history.notes}</p>
+                        ) : (
+                          <div className="mt-1 text-white/70 flex items-center space-x-1">
+                            <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                            <span className="text-xs">No message</span>
+                          </div>
                         )}
                       </div>
                     </div>

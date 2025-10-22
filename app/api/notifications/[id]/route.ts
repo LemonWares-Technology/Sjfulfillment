@@ -24,8 +24,11 @@ export const PUT = withRole(
       if (action === 'markAsRead') {
         const notification = await notificationService.markAsRead(id, user.userId)
         return NextResponse.json({
-          message: 'Notification marked as read',
-          notification
+          success: true,
+          data: {
+            notification
+          },
+          message: 'Notification marked as read'
         })
       }
 

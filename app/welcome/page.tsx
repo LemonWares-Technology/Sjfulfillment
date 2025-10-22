@@ -158,7 +158,10 @@ export default function WelcomePage() {
             </div>
           </div>
 
-          <div className="w-full mt-3 flex justify-end">
+          <div className="w-full mt-3 flex justify-between items-center">
+            <Link href="/track" className="w-fit hover:cursor-pointer hover:text-[#F08C17] transition-colors duration-300 ease-in-out">
+              Track Order
+            </Link>
             <Link href="/forgot-password" className="w-fit hover:cursor-pointer hover:text-[#F08C17] transition-colors duration-300 ease-in-out">
               Forgot password?
             </Link>

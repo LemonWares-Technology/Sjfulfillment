@@ -44,6 +44,13 @@ const nextConfig = {
     return config
   },
 
+  // Disable verbose request logging in development
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+  },
+
   // Headers for performance
   async headers() {
     return [

@@ -44,6 +44,14 @@ class NotificationService {
    */
   async createNotification(data: NotificationData) {
     try {
+      console.log('📢 Creating notification with data:', {
+        title: data.title,
+        type: data.type,
+        recipientId: data.recipientId,
+        recipientRole: data.recipientRole,
+        isGlobal: data.isGlobal
+      })
+
       const notification = await prisma.notification.create({
         data: {
           title: data.title,
@@ -57,10 +65,20 @@ class NotificationService {
         }
       })
 
-      console.log(`Notification created: ${notification.title} for ${data.recipientRole || 'Global'}`)
+      console.log(`✅ Notification created successfully:`, {
+        id: notification.id,
+        title: notification.title,
+        recipientId: notification.recipientId,
+        type: notification.type
+      })
+      
       return notification
     } catch (error) {
-      console.error('Error creating notification:', error)
+      console.error('❌ Error creating notification:', error)
+      if (error instanceof Error) {
+        console.error('Error message:', error.message)
+        console.error('Error stack:', error.stack)
+      }
       throw error
     }
   }
@@ -143,14 +161,23 @@ class NotificationService {
    */
   async markAsRead(notificationId: string, userId: string) {
     try {
-      const notification = await prisma.notification.update({
+      // Ensure the notification belongs to the user (or is global)
+      const canUpdate = await prisma.notification.findFirst({
         where: {
           id: notificationId,
           OR: [
             { recipientId: userId },
             { isGlobal: true }
           ]
-        },
+        }
+      })
+
+      if (!canUpdate) {
+        throw new Error('Notification not found or access denied')
+      }
+
+      const notification = await prisma.notification.update({
+        where: { id: notificationId },
         data: {
           isRead: true,
           readAt: new Date()
@@ -196,6 +223,8 @@ class NotificationService {
    */
   async getUserNotifications(userId: string, limit: number = 50, offset: number = 0) {
     try {
+      console.log('🔍 Fetching notifications for user ID:', userId)
+      
       const notifications = await prisma.notification.findMany({
         where: {
           OR: [
@@ -209,6 +238,16 @@ class NotificationService {
         take: limit,
         skip: offset
       })
+
+      console.log(`📬 Found ${notifications.length} notifications for user ${userId}`)
+      if (notifications.length > 0) {
+        console.log('Latest notification:', {
+          id: notifications[0].id,
+          title: notifications[0].title,
+          recipientId: notifications[0].recipientId,
+          createdAt: notifications[0].createdAt
+        })
+      }
 
       return notifications
     } catch (error) {
@@ -235,6 +274,27 @@ class NotificationService {
       return count
     } catch (error) {
       console.error('Error fetching unread notification count:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get total notifications count for a user
+   */
+  async getTotalCount(userId: string) {
+    try {
+      const count = await prisma.notification.count({
+        where: {
+          OR: [
+            { recipientId: userId },
+            { isGlobal: true }
+          ]
+        }
+      })
+
+      return count
+    } catch (error) {
+      console.error('Error fetching total notification count:', error)
       throw error
     }
   }

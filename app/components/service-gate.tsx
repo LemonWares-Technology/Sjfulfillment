@@ -71,14 +71,21 @@ function getCachedSubscriptions(merchantId: string): MerchantService[] | null {
   return entry.subscriptions
 }
 
-async function fetchSubscriptions(get: <T>(url: string) => Promise<T>, merchantId: string): Promise<MerchantService[]> {
+async function fetchSubscriptions(get: <T>(url: string, options?: any) => Promise<T>, merchantId: string): Promise<MerchantService[]> {
   if (inFlight.has(merchantId)) return inFlight.get(merchantId) as Promise<MerchantService[]>
   const p = (async () => {
-    const response = await get<{ subscriptions: MerchantService[] }>('/api/merchant-services/status')
-    const subs = response?.subscriptions || []
-    subscriptionCache.set(merchantId, { at: Date.now(), subscriptions: subs })
-    inFlight.delete(merchantId)
-    return subs
+    try {
+      const response = await get<{ subscriptions: MerchantService[] }>('/api/merchant-services/status', { silent: true })
+      const subs = response?.subscriptions || []
+      subscriptionCache.set(merchantId, { at: Date.now(), subscriptions: subs })
+      inFlight.delete(merchantId)
+      return subs
+    } catch (error) {
+      // Remove from in-flight on error so retries are possible
+      inFlight.delete(merchantId)
+      console.error('Error fetching subscriptions:', error)
+      return [] // Return empty array on error instead of throwing
+    }
   })()
   inFlight.set(merchantId, p)
   return p
@@ -95,27 +102,27 @@ export default function ServiceGate({
   const { user } = useAuth()
   const { get } = useApi()
   const router = useRouter()
+  // Use null initially to prevent flickering, then set to true/false once we know
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
     const checkServiceAccess = async () => {
       if (!user) {
         setHasAccess(false)
-        setLoading(false)
+        setIsChecking(false)
         return
       }
 
+      // Instant access for admin
       if (user.role === 'SJFS_ADMIN') {
-        // SJFS_ADMIN has access to everything
         setHasAccess(true)
-        setLoading(false)
+        setIsChecking(false)
         return
       }
 
-      // Warehouse staff and logistics users have access to certain services without merchant subscriptions
+      // Instant access for warehouse staff on certain services
       if (user.role === 'WAREHOUSE_STAFF') {
-        // Define which services warehouse staff can access without subscription
         const warehouseStaffServices = [
           'Order Processing',
           'Inventory Management',
@@ -123,65 +130,51 @@ export default function ServiceGate({
           'Stock Management'
         ]
         
-        console.log('ServiceGate - Warehouse staff checking service:', serviceName)
-        console.log('ServiceGate - Available services:', warehouseStaffServices)
-        
         if (warehouseStaffServices.includes(serviceName)) {
-          console.log('ServiceGate - Warehouse staff granted access to:', serviceName)
           setHasAccess(true)
-          setLoading(false)
+          setIsChecking(false)
           return
-        } else {
-          console.log('ServiceGate - Warehouse staff denied access to:', serviceName)
         }
       }
 
       if (!user.merchantId) {
-        console.log('ServiceGate - No merchantId found for user:', user.role)
         setHasAccess(false)
-        setLoading(false)
+        setIsChecking(false)
         return
       }
 
       try {
-        // Use cached subscriptions if available for instant decision
+        // Check cache first for instant decision
         const cached = getCachedSubscriptions(user.merchantId)
         if (cached) {
           const hasServiceAccess = cached.some(sub => sub.service.name === serviceName && sub.isActive)
           setHasAccess(hasServiceAccess)
-          setLoading(false)
+          setIsChecking(false)
           return
         }
 
-        // For inline mode, render the fallback immediately while we fetch in background
-        if (mode === 'inline') {
-          setLoading(false)
-        }
-
+        // Fetch in background and update if user has access
         const subs = await fetchSubscriptions(get, user.merchantId)
         const hasServiceAccess = subs.some(sub => sub.service.name === serviceName && sub.isActive)
         setHasAccess(hasServiceAccess)
+        setIsChecking(false)
       } catch (error) {
         console.error('Failed to check service access:', error)
+        // On error, assume no access but don't block the UI indefinitely
         setHasAccess(false)
-      } finally {
-        // Only keep loading if we're in block mode and no cache was present
-        if (mode === 'block') setLoading(false)
+        setIsChecking(false)
       }
     }
 
     checkServiceAccess()
-  }, [user, serviceName, get, mode])
+  }, [user, serviceName, get])
 
-  // For inline mode, prefer to show the button immediately instead of a skeleton
-  if (loading && mode === 'block') {
-    return (
-      <div className={`animate-pulse ${className}`}>
-        <div className="h-8 bg-gray-200 rounded"></div>
-      </div>
-    )
+  // Show loading state briefly to prevent flickering
+  if (isChecking) {
+    return null // Return nothing while checking to prevent flicker
   }
 
+  // Show content if user has access
   if (hasAccess) {
     return <>{children}</>
   }

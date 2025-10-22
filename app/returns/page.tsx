@@ -6,11 +6,13 @@ import { useApi } from '@/app/lib/use-api'
 import { useEffect, useState } from 'react'
 import { formatCurrency, formatDate } from '@/app/lib/utils'
 import { EyeIcon, CheckIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import SearchBar from '@/app/components/search-bar'
 import FilterSelect from '@/app/components/filter-select'
 import Pagination from '@/app/components/pagination'
 import ServiceGate from '@/app/components/service-gate'
+import LoadingSpinner from '@/app/components/loading-spinner'
 
 interface ReturnRequest {
   id: string
@@ -56,7 +58,7 @@ interface OrderSummary {
 
 export default function ReturnsPage() {
   const { user } = useAuth()
-  const { get, put, loading } = useApi()
+  const { get, post, put, loading } = useApi()
   const [returns, setReturns] = useState<ReturnRequest[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
@@ -64,6 +66,7 @@ export default function ReturnsPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage] = useState(10)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   // Create Return modal state
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -82,6 +85,7 @@ export default function ReturnsPage() {
 
   const fetchReturns = async () => {
     try {
+      setIsLoadingData(true)
       console.log('Fetching returns for user:', user?.role, user?.merchantId)
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -107,6 +111,8 @@ export default function ReturnsPage() {
       setReturns([])
       setTotalPages(1)
       setTotalItems(0)
+    } finally {
+      setIsLoadingData(false)
     }
   }
 
@@ -170,7 +176,8 @@ export default function ReturnsPage() {
       if (!isNaN(amt) && amt > 0) {
         payload.refundAmount = amt
       }
-      await put('/api/returns', payload) // use POST semantics via useApi.post, but keep consistent API
+  // Create return request
+  await post('/api/returns', payload)
       toast.success('Return request created')
       setIsCreateOpen(false)
       resetCreateForm()
@@ -191,10 +198,8 @@ export default function ReturnsPage() {
         return 'bg-green-100 text-green-800'
       case 'REJECTED':
         return 'bg-red-100 text-red-800'
-      case 'PROCESSING':
+      case 'PROCESSED':
         return 'bg-blue-100 text-blue-800'
-      case 'COMPLETED':
-        return 'bg-purple-100 text-purple-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -385,8 +390,7 @@ export default function ReturnsPage() {
                   { value: 'PENDING', label: 'Pending' },
                   { value: 'APPROVED', label: 'Approved' },
                   { value: 'REJECTED', label: 'Rejected' },
-                  { value: 'PROCESSED', label: 'Processed' },
-                  { value: 'RESTOCKED', label: 'Restocked' }
+                  { value: 'PROCESSED', label: 'Processed' }
                 ]}
                 value={statusFilter}
                 onChange={handleStatusFilterChange}
@@ -400,6 +404,9 @@ export default function ReturnsPage() {
         {/* Returns Table */}
         <div className="bg-white/30 shadow-lg backdrop-blur-md overflow-hidden sm:rounded-[5px]">
           <div className="px-4 py-5 sm:p-6">
+            {isLoadingData ? (
+              <LoadingSpinner text="Loading returns..." size="lg" className="py-12" />
+            ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-white/30">
                 <thead className="bg-gradient-to-r from-[#f08c17] to-orange-400">
@@ -457,7 +464,7 @@ export default function ReturnsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-white/90">
-                        Return items
+                        —
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white/90">
                         {formatCurrency(returnItem.approvedAmount || returnItem.refundAmount || 0)}
@@ -472,9 +479,9 @@ export default function ReturnsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button className="text-[#f08c17] hover:text-orange-400 bg-white/20 rounded-full p-1 transition-colors" title="View Details">
+                          <Link href={`/returns/${returnItem.id}`} className="text-[#f08c17] hover:text-orange-400 bg-white/20 rounded-full p-1 transition-colors" title="View Details">
                             <EyeIcon className="h-4 w-4" />
-                          </button>
+                          </Link>
                           {returnItem.status === 'PENDING' && (user?.role === 'SJFS_ADMIN' || user?.role === 'WAREHOUSE_STAFF') && (
                             <>
                               <button
@@ -509,8 +516,9 @@ export default function ReturnsPage() {
                 </tbody>
               </table>
             </div>
+            )}
             
-            {filteredReturns.length === 0 && (
+            {!isLoadingData && filteredReturns.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-white/90">No return requests found</p>
               </div>
@@ -519,6 +527,7 @@ export default function ReturnsPage() {
         </div>
 
         {/* Pagination */}
+        {!isLoadingData && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -526,6 +535,7 @@ export default function ReturnsPage() {
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
         />
+        )}
         </div>
       </ServiceGate>
     </DashboardLayout>

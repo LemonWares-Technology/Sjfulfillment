@@ -13,19 +13,26 @@ export const GET = withRole(
       const offset = parseInt(searchParams.get('offset') || '0')
       const unreadOnly = searchParams.get('unreadOnly') === 'true'
 
-      const notifications = await notificationService.getUserNotifications(user.userId, limit, offset)
-      const unreadCount = await notificationService.getUnreadCount(user.userId)
+      console.log('🔔 GET /api/notifications called by:', {
+        userId: user.userId,
+        role: user.role,
+        merchantId: user.merchantId,
+        email: user.email
+      })
 
-      // Filter unread only if requested
-      const filteredNotifications = unreadOnly 
-        ? notifications.filter(n => !n.isRead)
-        : notifications
+  const notifications = await notificationService.getUserNotifications(user.userId, limit, offset)
+  const unreadCount = await notificationService.getUnreadCount(user.userId)
+  const total = await notificationService.getTotalCount(user.userId)
+
+  console.log(`📬 Returning ${notifications.length} notifications (${unreadCount} unread) of total ${total}`)
 
       return NextResponse.json({
         success: true,
-        notifications: filteredNotifications,
-        unreadCount,
-        total: filteredNotifications.length
+          data: {
+            notifications,
+            unreadCount,
+            total
+          }
       })
     } catch (error) {
       console.error('Error fetching notifications:', error)

@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/api-utils";
 import { createOrderSchema } from "@/app/lib/validations";
 import { notificationService, NotificationTemplates } from "@/app/lib/notification-service";
+import { sendOrderConfirmationEmail, sendMerchantOrderNotificationEmail } from "@/app/lib/email";
 
 // GET /api/orders
 export const GET = withRole(
@@ -238,6 +239,9 @@ export const POST = withRole(
             select: {
               id: true,
               businessName: true,
+              address: true,
+              businessPhone: true,
+              businessEmail: true,
             },
           },
           orderItems: {
@@ -342,6 +346,135 @@ export const POST = withRole(
       } catch (notificationError) {
         console.error('Error sending order creation notifications:', notificationError)
         // Don't fail the order creation if notifications fail
+      }
+
+      // Send emails and notifications
+      try {
+        // Get merchant user info for the email
+        const merchantUser = await prisma.user.findFirst({
+          where: {
+            merchantId: newOrder.merchantId,
+            role: 'MERCHANT_ADMIN'
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        })
+
+        console.log('🔍 Merchant user found:', merchantUser ? `${merchantUser.firstName} ${merchantUser.lastName} (ID: ${merchantUser.id})` : 'None')
+
+        const merchantName = merchantUser 
+          ? `${merchantUser.firstName} ${merchantUser.lastName}`.trim() 
+          : newOrder.merchant.businessName
+
+        // Format shipping address for email
+        const shippingAddr = typeof newOrder.shippingAddress === 'object' && newOrder.shippingAddress !== null
+          ? JSON.stringify(newOrder.shippingAddress, null, 2)
+          : String(newOrder.shippingAddress || '')
+
+        // Send confirmation email to customer
+        if (newOrder.customerEmail) {
+          console.log('📧 Sending order confirmation to customer:', newOrder.customerEmail)
+
+          await sendOrderConfirmationEmail({
+            to: newOrder.customerEmail,
+            customerName: newOrder.customerName,
+            orderNumber: newOrder.orderNumber,
+            orderItems: newOrder.orderItems.map(item => ({
+              productName: item.product.name,
+              sku: item.product.sku,
+              quantity: item.quantity,
+              unitPrice: Number(item.unitPrice),
+              totalPrice: Number(item.totalPrice)
+            })),
+            orderValue: Number(newOrder.orderValue),
+            deliveryFee: Number(newOrder.deliveryFee),
+            totalAmount: Number(newOrder.totalAmount),
+            status: newOrder.status,
+            shippingAddress: shippingAddr,
+            merchantName: merchantName,
+            merchantBusinessName: newOrder.merchant.businessName,
+            merchantAddress: newOrder.merchant.address,
+            merchantPhone: newOrder.merchant.businessPhone,
+            merchantEmail: newOrder.merchant.businessEmail,
+            paymentMethod: newOrder.paymentMethod || undefined,
+            createdAt: newOrder.createdAt,
+            orderId: newOrder.id
+          })
+
+          console.log('✅ Customer confirmation email sent')
+        } else {
+          console.log('⚠️ No customer email provided')
+        }
+
+        // Send notification email to merchant
+        const merchantEmail = newOrder.merchant.businessEmail
+        if (merchantEmail) {
+          console.log('📧 Sending order notification to merchant:', merchantEmail)
+
+          await sendMerchantOrderNotificationEmail({
+            to: merchantEmail,
+            merchantName: merchantName,
+            orderNumber: newOrder.orderNumber,
+            customerName: newOrder.customerName,
+            customerEmail: newOrder.customerEmail || 'N/A',
+            customerPhone: newOrder.customerPhone,
+            orderItems: newOrder.orderItems.map(item => ({
+              productName: item.product.name,
+              sku: item.product.sku,
+              quantity: item.quantity,
+              unitPrice: Number(item.unitPrice),
+              totalPrice: Number(item.totalPrice)
+            })),
+            orderValue: Number(newOrder.orderValue),
+            deliveryFee: Number(newOrder.deliveryFee),
+            totalAmount: Number(newOrder.totalAmount),
+            shippingAddress: shippingAddr,
+            paymentMethod: newOrder.paymentMethod || undefined,
+            createdAt: newOrder.createdAt,
+            orderId: newOrder.id
+          })
+
+          console.log('✅ Merchant notification email sent')
+        }
+
+        // Create platform notification for merchant
+        if (merchantUser?.id) {
+          const totalAmount = Number(newOrder.totalAmount)
+          const formattedAmount = new Intl.NumberFormat('en-NG', {
+            style: 'currency',
+            currency: 'NGN'
+          }).format(totalAmount)
+
+          console.log('🔔 Creating platform notification for merchant user ID:', merchantUser.id)
+
+          await notificationService.createNotification({
+            recipientId: merchantUser.id,
+            title: `New Order: ${newOrder.orderNumber}`,
+            message: `You have received a new order from ${newOrder.customerName} for ${formattedAmount}`,
+            type: 'ORDER_CREATED',
+            metadata: {
+              orderId: newOrder.id,
+              orderNumber: newOrder.orderNumber,
+              customerName: newOrder.customerName,
+              totalAmount: newOrder.totalAmount
+            }
+          })
+
+          console.log('✅ Platform notification created for merchant user:', merchantUser.email)
+        } else {
+          console.log('⚠️ No merchant user found, skipping platform notification')
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending emails/notifications:', emailError)
+        if (emailError instanceof Error) {
+          console.error('Error details:', emailError.message)
+          console.error('Stack:', emailError.stack)
+        }
+        // Don't fail the order creation if emails/notifications fail
       }
 
       return createResponse(newOrder, 201, "Order created successfully");

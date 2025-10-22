@@ -11,8 +11,11 @@ export const PUT = withRole(
       const result = await notificationService.markAllAsRead(user.userId)
       
       return NextResponse.json({
-        message: 'All notifications marked as read',
-        count: result.count
+        success: true,
+        data: {
+          count: result.count
+        },
+        message: 'All notifications marked as read'
       })
     } catch (error) {
       console.error('Error marking all notifications as read:', error)

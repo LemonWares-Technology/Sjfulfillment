@@ -69,7 +69,6 @@ interface PlanUpdateStatus {
  */
 
 function PlanManagementContent() {
-  const { user } = useAuth()
   const { get, post, put, loading } = useApi()
   const searchParams: any = useSearchParams() // Get query parameters for service highlighting
   const [services, setServices] = useState<Service[]>([])
@@ -188,6 +187,17 @@ function PlanManagementContent() {
     })
   }
 
+  const subscribeToAllServices = () => {
+    const allServices: {[key: string]: SelectedService} = {}
+    services.forEach(service => {
+      allServices[service.id] = {
+        serviceId: service.id,
+        price: service.price
+      }
+    })
+    setSelectedServices(allServices)
+  }
+
   const calculateTotal = () => {
     return Object.values(selectedServices).reduce((total, service) => {
       return total + service.price
@@ -282,6 +292,14 @@ function PlanManagementContent() {
             </div>
             <div className="flex space-x-3">
               <button
+                onClick={subscribeToAllServices}
+                disabled={isUpdating || loading || services.length === 0}
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2 rounded-[5px] flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckIcon className="h-5 w-5 mr-2" />
+                Subscribe to All Services
+              </button>
+              <button
                 onClick={() => setShowComparison(!showComparison)}
                 className="text-white px-4 py-2 rounded-[5px] flex items-center border border-white/20 hover:bg-white/10"
               >
@@ -314,7 +332,7 @@ function PlanManagementContent() {
                   <p>
                     You can only update your plan once every 24 hours. 
                     {updateStatus.hoursRemaining > 0 && (
-                      <span> Please wait {updateStatus.hoursRemaining} more hour(s).</span>
+                      <span> Please wait for {updateStatus.hoursRemaining} hour(s).</span>
                     )}
                   </p>
                   {updateStatus.lastUpdate && (

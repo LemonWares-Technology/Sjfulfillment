@@ -17,10 +17,12 @@ export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF', '
       include: {
         order: {
           select: {
+            merchantId: true,
             id: true,
             orderNumber: true,
             customerName: true,
             customerEmail: true,
+            createdAt: true,
             totalAmount: true,
             status: true,
             merchant: {
@@ -119,10 +121,12 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF'], async (request: N
       include: {
         order: {
           select: {
+            merchantId: true,
             id: true,
             orderNumber: true,
             customerName: true,
             customerEmail: true,
+            createdAt: true,
             totalAmount: true,
             status: true,
             merchant: {
@@ -161,6 +165,24 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF'], async (request: N
         newValues: { status, approvedAmount, rejectionReason }
       }
     })
+
+    // Create notification for requester on approval/rejection
+    try {
+      if (status === 'APPROVED' || status === 'REJECTED') {
+        await prisma.notification.create({
+          data: {
+            recipientId: returnRequest.requestedBy || undefined,
+            title: `Return ${status.toLowerCase()}`,
+            message: `Your return request for order ${updatedReturn.order.orderNumber} has been ${status.toLowerCase()}.`,
+            type: status === 'APPROVED' ? 'RETURN_APPROVED' : 'RETURN_REJECTED',
+            isRead: false
+          }
+        })
+      }
+    } catch (notifyErr) {
+      console.error('Failed to create return notification:', notifyErr)
+      // Do not fail the main request if notification fails
+    }
 
     return createResponse(updatedReturn, 200, 'Return request updated successfully')
   } catch (error) {

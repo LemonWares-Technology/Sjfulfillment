@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/prisma'
 import { createResponse, createErrorResponse, withRole } from '../../../lib/api-utils'
 import { updateOrderStatusSchema } from '../../../lib/validations'
 import { notificationService, NotificationTemplates } from '../../../lib/notification-service'
+import { sendOrderStatusUpdateEmail, sendMerchantStatusUpdateEmail } from '../../../lib/email'
 
 // GET /api/orders/[id]
 export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF', 'WAREHOUSE_STAFF', 'LOGISTICS_PARTNER'], async (request: NextRequest, user, { params }: { params: Promise<{ id: string }> }) => {
@@ -120,7 +121,10 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF', 'LOGISTICS_PARTNER
         merchant: {
           select: {
             id: true,
-            businessName: true
+            businessName: true,
+            businessEmail: true,
+            address: true,
+            businessPhone: true
           }
         },
         orderItems: {
@@ -196,53 +200,173 @@ export const PUT = withRole(['SJFS_ADMIN', 'WAREHOUSE_STAFF', 'LOGISTICS_PARTNER
 
     // Send notifications based on status change
     try {
-      if (updateData.status === 'DELIVERED') {
-        // Notify merchant about delivery
-        await notificationService.createRoleNotification({
-          ...NotificationTemplates.ORDER_DELIVERED(updatedOrder.orderNumber, updatedOrder.customerName),
-          recipientRole: 'MERCHANT_ADMIN',
-          metadata: {
-            orderId: updatedOrder.id,
-            orderNumber: updatedOrder.orderNumber,
-            merchantId: updatedOrder.merchantId,
-            deliveredAt: new Date().toISOString()
-          }
-        })
-      } else if (updateData.status === 'CANCELLED') {
-        // Notify all relevant parties about cancellation
-        await notificationService.createRoleNotification({
-          title: 'Order Cancelled',
-          message: `Order ${updatedOrder.orderNumber} has been cancelled`,
-          type: 'ORDER_CANCELLED',
-          priority: 'HIGH',
-          recipientRole: 'MERCHANT_ADMIN',
-          metadata: {
-            orderId: updatedOrder.id,
-            orderNumber: updatedOrder.orderNumber,
-            merchantId: updatedOrder.merchantId,
-            cancelledAt: new Date().toISOString()
-          }
-        })
+      // Get merchant admin user for this specific merchant
+      const merchantAdminUser = await prisma.user.findFirst({
+        where: {
+          merchantId: updatedOrder.merchantId,
+          role: 'MERCHANT_ADMIN'
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true
+        }
+      })
+
+      if (merchantAdminUser) {
+        console.log('🔔 Creating notification for merchant admin:', merchantAdminUser.id)
+
+        if (updateData.status === 'DELIVERED') {
+          // Notify merchant about delivery
+          await notificationService.createNotification({
+            recipientId: merchantAdminUser.id,
+            title: 'Order Delivered',
+            message: `Order ${updatedOrder.orderNumber} for ${updatedOrder.customerName} has been delivered`,
+            type: 'ORDER_DELIVERED',
+            priority: 'MEDIUM',
+            metadata: {
+              orderId: updatedOrder.id,
+              orderNumber: updatedOrder.orderNumber,
+              merchantId: updatedOrder.merchantId,
+              customerName: updatedOrder.customerName,
+              deliveredAt: new Date().toISOString()
+            }
+          })
+        } else if (updateData.status === 'CANCELLED') {
+          // Notify merchant about cancellation
+          await notificationService.createNotification({
+            recipientId: merchantAdminUser.id,
+            title: 'Order Cancelled',
+            message: `Order ${updatedOrder.orderNumber} has been cancelled`,
+            type: 'ORDER_CANCELLED',
+            priority: 'HIGH',
+            metadata: {
+              orderId: updatedOrder.id,
+              orderNumber: updatedOrder.orderNumber,
+              merchantId: updatedOrder.merchantId,
+              cancelledAt: new Date().toISOString()
+            }
+          })
+        } else {
+          // General order update notification
+          await notificationService.createNotification({
+            recipientId: merchantAdminUser.id,
+            title: 'Order Status Updated',
+            message: `Order ${updatedOrder.orderNumber} status updated to ${updateData.status.replace(/_/g, ' ')}`,
+            type: 'ORDER_UPDATED',
+            priority: 'MEDIUM',
+            metadata: {
+              orderId: updatedOrder.id,
+              orderNumber: updatedOrder.orderNumber,
+              merchantId: updatedOrder.merchantId,
+              newStatus: updateData.status,
+              updatedAt: new Date().toISOString()
+            }
+          })
+        }
+
+        console.log('✅ Platform notification created for merchant admin')
       } else {
-        // General order update notification
-        await notificationService.createRoleNotification({
-          title: 'Order Status Updated',
-          message: `Order ${updatedOrder.orderNumber} status updated to ${updateData.status}`,
-          type: 'ORDER_UPDATED',
-          priority: 'MEDIUM',
-          recipientRole: 'MERCHANT_ADMIN',
-          metadata: {
-            orderId: updatedOrder.id,
-            orderNumber: updatedOrder.orderNumber,
-            merchantId: updatedOrder.merchantId,
-            newStatus: updateData.status,
-            updatedAt: new Date().toISOString()
-          }
-        })
+        console.log('⚠️ No merchant admin user found for notification')
       }
     } catch (notificationError) {
-      console.error('Error sending order status update notifications:', notificationError)
+      console.error('❌ Error sending order status update notifications:', notificationError)
+      if (notificationError instanceof Error) {
+        console.error('Error details:', notificationError.message)
+      }
       // Don't fail the order update if notifications fail
+    }
+
+    // Send status update email to customer
+    try {
+      // Only send email if customer email exists
+      if (updatedOrder.customerEmail) {
+        console.log('Attempting to send order status update email to customer...', {
+          to: updatedOrder.customerEmail,
+          orderNumber: updatedOrder.orderNumber,
+          newStatus: updateData.status,
+          trackingNumber: updateData.trackingNumber
+        })
+
+        await sendOrderStatusUpdateEmail({
+          to: updatedOrder.customerEmail,
+          customerName: updatedOrder.customerName,
+          orderNumber: updatedOrder.orderNumber,
+          newStatus: updateData.status,
+          merchantBusinessName: updatedOrder.merchant.businessName,
+          merchantAddress: updatedOrder.merchant.address || undefined,
+          merchantPhone: updatedOrder.merchant.businessPhone || undefined,
+          merchantEmail: updatedOrder.merchant.businessEmail || undefined,
+          trackingNumber: updateData.trackingNumber,
+          notes: updateData.notes,
+          updatedAt: new Date(),
+          orderId: updatedOrder.id
+        })
+
+        console.log('✅ Order status update email sent successfully to customer:', updatedOrder.customerEmail)
+      } else {
+        console.log('⚠️ Skipping customer status update email: No customer email for order', updatedOrder.orderNumber)
+      }
+    } catch (emailError) {
+      console.error('❌ Error sending order status update email to customer:', emailError)
+      // Log more details about the error
+      if (emailError instanceof Error) {
+        console.error('Error name:', emailError.name)
+        console.error('Error message:', emailError.message)
+        console.error('Error stack:', emailError.stack)
+      }
+      // Don't fail the order update if email sending fails
+    }
+
+    // Send status update email to merchant
+    try {
+      if (updatedOrder.merchant.businessEmail) {
+        // Get merchant user name
+        const merchantUser = await prisma.user.findFirst({
+          where: {
+            merchantId: updatedOrder.merchantId,
+            role: 'MERCHANT_ADMIN'
+          },
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        })
+
+        const merchantName = merchantUser 
+          ? `${merchantUser.firstName} ${merchantUser.lastName}`
+          : updatedOrder.merchant.businessName
+
+        console.log('Attempting to send order status update email to merchant...', {
+          to: updatedOrder.merchant.businessEmail,
+          orderNumber: updatedOrder.orderNumber,
+          newStatus: updateData.status
+        })
+
+        await sendMerchantStatusUpdateEmail({
+          to: updatedOrder.merchant.businessEmail,
+          merchantName,
+          orderNumber: updatedOrder.orderNumber,
+          customerName: updatedOrder.customerName,
+          newStatus: updateData.status,
+          trackingNumber: updateData.trackingNumber,
+          notes: updateData.notes,
+          updatedAt: new Date(),
+          orderId: updatedOrder.id
+        })
+
+        console.log('✅ Order status update email sent successfully to merchant:', updatedOrder.merchant.businessEmail)
+      } else {
+        console.log('⚠️ Skipping merchant status update email: No merchant email for order', updatedOrder.orderNumber)
+      }
+    } catch (emailError) {
+      console.error('❌ Error sending order status update email to merchant:', emailError)
+      if (emailError instanceof Error) {
+        console.error('Error name:', emailError.name)
+        console.error('Error message:', emailError.message)
+        console.error('Error stack:', emailError.stack)
+      }
+      // Don't fail the order update if email sending fails
     }
 
     return createResponse(updatedOrder, 200, 'Order updated successfully')

@@ -44,7 +44,7 @@ interface RefundRequest {
 
 export default function RefundRequestsPage() {
   const { user } = useAuth()
-  const { get, loading } = useApi()
+  const { get, put, loading } = useApi()
   const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
@@ -74,7 +74,7 @@ export default function RefundRequestsPage() {
       
       if (response?.refundRequests) {
         setRefundRequests(Array.isArray(response.refundRequests) ? response.refundRequests : [])
-        setTotalPages(response.pagination?.pages || 1)
+        setTotalPages(response.pagination?.totalPages || response.pagination?.pages || 1)
         setTotalItems(response.pagination?.total || 0)
       } else {
         setRefundRequests([])
@@ -92,53 +92,38 @@ export default function RefundRequestsPage() {
 
   const handleApproveRefund = async (refundId: string, approvedAmount: number) => {
     try {
-      const response = await fetch(`/api/refund-requests/${refundId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          status: 'APPROVED',
-          approvedAmount: approvedAmount
-        })
+      await put(`/api/refund-requests/${refundId}`, {
+        status: 'APPROVED',
+        approvedAmount
       })
-
-      if (response.ok) {
-        fetchRefundRequests()
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to approve refund request')
-      }
+      fetchRefundRequests()
     } catch (error) {
       console.error('Error approving refund:', error)
-      alert('An error occurred while approving the refund')
+      // Errors are tosted by useApi; keep UI quiet here
     }
   }
 
   const handleRejectRefund = async (refundId: string, rejectionReason: string) => {
     try {
-      const response = await fetch(`/api/refund-requests/${refundId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          status: 'REJECTED',
-          rejectionReason: rejectionReason
-        })
+      await put(`/api/refund-requests/${refundId}`, {
+        status: 'REJECTED',
+        rejectionReason
       })
-
-      if (response.ok) {
-        fetchRefundRequests()
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to reject refund request')
-      }
+      fetchRefundRequests()
     } catch (error) {
       console.error('Error rejecting refund:', error)
-      alert('An error occurred while rejecting the refund')
+      // Errors are tosted by useApi
+    }
+  }
+
+  const handleProcessRefund = async (refundId: string) => {
+    try {
+      await put(`/api/refund-requests/${refundId}`, {
+        status: 'PROCESSED'
+      })
+      fetchRefundRequests()
+    } catch (error) {
+      console.error('Error processing refund:', error)
     }
   }
 
@@ -385,6 +370,15 @@ export default function RefundRequestsPage() {
                                 <XMarkIcon className="h-4 w-4" />
                               </button>
                             </>
+                          )}
+                          {request.status === 'APPROVED' && (
+                            <button
+                              onClick={() => handleProcessRefund(request.id)}
+                              className="text-blue-300 hover:text-blue-500"
+                              title="Mark as Processed"
+                            >
+                              Process
+                            </button>
                           )}
                         </div>
                       </td>
