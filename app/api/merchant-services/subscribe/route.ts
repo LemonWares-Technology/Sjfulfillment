@@ -3,7 +3,7 @@ import { JWTPayload } from '@/app/lib/auth'
 import { createErrorResponse, createResponse, withRole } from '@/app/lib/api-utils'
 import { prisma } from '@/app/lib/prisma'
 import { z } from 'zod'
-import { ensureDefaultServices, ensureMerchantDefaultSubscription } from '@/app/lib/services-utils'
+// Removed implicit default subscription creation to avoid auto-subscribing users
 
 const subscribeToServicesSchema = z.object({
   merchantId: z.string().min(1, 'Merchant ID is required'),
@@ -141,9 +141,6 @@ export const GET = withRole(['MERCHANT_ADMIN', 'MERCHANT_STAFF'], async (request
     if (!user.merchantId) {
       return createErrorResponse('Merchant ID not found', 400)
     }
-
-    // Ensure merchant has default subscriptions
-    await ensureMerchantDefaultSubscription(user.merchantId)
 
     const subscriptions = await prisma.merchantServiceSubscription.findMany({
       where: {

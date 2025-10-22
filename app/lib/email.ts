@@ -138,7 +138,7 @@ export async function sendWelcomePartnerEmail(params: {
 }): Promise<void> {
   const { to, partnerName, companyName, email, password } = params
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
-  const loginUrl = `${baseUrl}/login`
+  const loginUrl = `${baseUrl}/welcome`
   const displayName = partnerName || companyName || 'there'
 
   const content = `
@@ -208,7 +208,7 @@ export async function sendWelcomeMerchantEmail(params: {
 }): Promise<void> {
   const { to, businessName, firstName, email } = params
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
-  const loginUrl = `${baseUrl}/login`
+  const loginUrl = `${baseUrl}/welcome`
   const displayName = businessName || firstName || 'there'
 
   const content = `
@@ -251,7 +251,7 @@ export async function sendWelcomeStaffEmail(params: {
 }): Promise<void> {
   const { to, firstName, role, email, password } = params
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
-  const loginUrl = `${baseUrl}/login`
+  const loginUrl = `${baseUrl}/welcome`
   const displayName = firstName || 'there'
   const roleDisplay = role ? role.replace(/_/g, ' ').toLowerCase() : 'staff member'
 

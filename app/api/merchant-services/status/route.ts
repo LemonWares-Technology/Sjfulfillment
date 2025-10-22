@@ -6,22 +6,13 @@ import { prisma } from '@/app/lib/prisma'
 // GET /api/merchant-services/status
 export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF'], async (request: NextRequest, user: JWTPayload) => {
   try {
-    // For SJFS_ADMIN, return all services as accessible
+    // For SJFS_ADMIN, return empty subscriptions - they have access via role, not subscriptions
     if (user.role === 'SJFS_ADMIN') {
       return createResponse({
         hasServices: true,
-        serviceCount: 8, // All services
-        subscriptions: [
-          { id: 'admin-access', service: { name: 'Inventory Management', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'Order Processing', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'Warehouse Management', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'Analytics Dashboard', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'Staff Management', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'Returns Management', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'API Access', description: 'Admin access' }, isActive: true },
-          { id: 'admin-access', service: { name: 'Delivery Tracking', description: 'Admin access' }, isActive: true }
-        ]
-      }, 200, 'Admin has access to all services')
+        serviceCount: 0,
+        subscriptions: []
+      }, 200, 'Admin has access to all services via role')
     }
 
     if (!user.merchantId) {

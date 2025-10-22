@@ -55,6 +55,35 @@ interface MerchantService {
   isActive: boolean
 }
 
+// Simple in-memory cache to speed up repeated checks within a short window
+const SUBSCRIPTION_TTL_MS = 60_000 // 1 minute
+type CacheEntry = { at: number; subscriptions: MerchantService[] }
+const subscriptionCache = new Map<string, CacheEntry>()
+const inFlight = new Map<string, Promise<MerchantService[]>>()
+
+function getCachedSubscriptions(merchantId: string): MerchantService[] | null {
+  const entry = subscriptionCache.get(merchantId)
+  if (!entry) return null
+  if (Date.now() - entry.at > SUBSCRIPTION_TTL_MS) {
+    subscriptionCache.delete(merchantId)
+    return null
+  }
+  return entry.subscriptions
+}
+
+async function fetchSubscriptions(get: <T>(url: string) => Promise<T>, merchantId: string): Promise<MerchantService[]> {
+  if (inFlight.has(merchantId)) return inFlight.get(merchantId) as Promise<MerchantService[]>
+  const p = (async () => {
+    const response = await get<{ subscriptions: MerchantService[] }>('/api/merchant-services/status')
+    const subs = response?.subscriptions || []
+    subscriptionCache.set(merchantId, { at: Date.now(), subscriptions: subs })
+    inFlight.delete(merchantId)
+    return subs
+  })()
+  inFlight.set(merchantId, p)
+  return p
+}
+
 export default function ServiceGate({ 
   serviceName, 
   children, 
@@ -115,30 +144,37 @@ export default function ServiceGate({
       }
 
       try {
-        const response = await get<{subscriptions: MerchantService[]}>('/api/merchant-services/status')
-        console.log('ServiceGate - API Response:', response)
-        const subscriptions = response?.subscriptions || []
-        console.log('ServiceGate - Subscriptions:', subscriptions)
-        console.log('ServiceGate - Checking service:', serviceName)
-        
-        const hasServiceAccess = subscriptions.some(
-          sub => sub.service.name === serviceName && sub.isActive
-        )
-        
-        console.log('ServiceGate - Has access:', hasServiceAccess)
+        // Use cached subscriptions if available for instant decision
+        const cached = getCachedSubscriptions(user.merchantId)
+        if (cached) {
+          const hasServiceAccess = cached.some(sub => sub.service.name === serviceName && sub.isActive)
+          setHasAccess(hasServiceAccess)
+          setLoading(false)
+          return
+        }
+
+        // For inline mode, render the fallback immediately while we fetch in background
+        if (mode === 'inline') {
+          setLoading(false)
+        }
+
+        const subs = await fetchSubscriptions(get, user.merchantId)
+        const hasServiceAccess = subs.some(sub => sub.service.name === serviceName && sub.isActive)
         setHasAccess(hasServiceAccess)
       } catch (error) {
         console.error('Failed to check service access:', error)
         setHasAccess(false)
       } finally {
-        setLoading(false)
+        // Only keep loading if we're in block mode and no cache was present
+        if (mode === 'block') setLoading(false)
       }
     }
 
     checkServiceAccess()
-  }, [user, serviceName, get])
+  }, [user, serviceName, get, mode])
 
-  if (loading) {
+  // For inline mode, prefer to show the button immediately instead of a skeleton
+  if (loading && mode === 'block') {
     return (
       <div className={`animate-pulse ${className}`}>
         <div className="h-8 bg-gray-200 rounded"></div>
