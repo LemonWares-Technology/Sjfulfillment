@@ -30,7 +30,7 @@ const BULK_ACTIONS = {
   orders: [
     { value: 'update_status', label: 'Update Status', description: 'Change status for selected orders' },
     { value: 'assign_warehouse', label: 'Assign Warehouse', description: 'Assign warehouse to selected orders' },
-    { value: 'export', label: 'Export Orders', description: 'Export selected orders to Excel/PDF' },
+    { value: 'export', label: 'Export Orders', description: 'Export selected orders to PDF' },
     { value: 'cancel', label: 'Cancel Orders', description: 'Cancel selected orders' }
   ]
 }

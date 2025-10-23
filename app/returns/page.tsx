@@ -264,7 +264,7 @@ export default function ReturnsPage() {
                     value={orderSearch}
                     onChange={(e) => setOrderSearch(e.target.value)}
                     placeholder="Search by order number, customer name, email, or phone"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-[6px] focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-[6px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
                   />
                   <button onClick={searchOrders} className="bg-gray-800 text-white px-3 py-2 rounded-[6px]">Search</button>
                 </div>
@@ -338,7 +338,7 @@ export default function ReturnsPage() {
                     min="0"
                     value={refundAmount}
                     onChange={(e) => setRefundAmount(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-[6px] focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[6px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
                   />
                 </div>
                 <div className="flex items-end">

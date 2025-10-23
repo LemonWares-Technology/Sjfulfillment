@@ -86,7 +86,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  const exportReport = async (format: 'pdf' | 'excel', reportType: 'general' | 'merchant' = 'general', merchantId?: string) => {
+  const exportReport = async (format: 'pdf', reportType: 'general' | 'merchant' = 'general', merchantId?: string) => {
     try {
       const params = new URLSearchParams({
         start: dateRange.start,
@@ -109,8 +109,8 @@ export default function AnalyticsPage() {
         const a = document.createElement('a')
         a.href = url
         const filename = reportType === 'merchant' 
-          ? `merchant-report-${merchantId}-${dateRange.start}-to-${dateRange.end}.${format === 'excel' ? 'xlsx' : 'pdf'}`
-          : `sjf-analytics-report-${dateRange.start}-to-${dateRange.end}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+          ? `merchant-report-${merchantId}-${dateRange.start}-to-${dateRange.end}.pdf`
+          : `sjf-analytics-report-${dateRange.start}-to-${dateRange.end}.pdf`
         a.download = filename
         document.body.appendChild(a)
         a.click()
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  const generateComprehensiveReport = async (format: 'pdf' | 'excel') => {
+  const generateComprehensiveReport = async (format: 'pdf') => {
     try {
       const params = new URLSearchParams({
         start: dateRange.start,
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `sjf-comprehensive-report-${dateRange.start}-to-${dateRange.end}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+        a.download = `sjf-comprehensive-report-${dateRange.start}-to-${dateRange.end}.pdf`
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
@@ -270,13 +270,6 @@ export default function AnalyticsPage() {
                 serviceName="Analytics Dashboard"
                 buttonLabel="Subscribe to Analytics Dashboard"
               >
-                <button
-                  onClick={() => exportReport('excel', 'general')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-[5px] flex items-center"
-                >
-                  <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-                  Export Excel
-                </button>
                 <button
                   onClick={() => exportReport('pdf', 'general')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-[5px] flex items-center"

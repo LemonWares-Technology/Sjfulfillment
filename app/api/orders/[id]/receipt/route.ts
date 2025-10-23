@@ -123,13 +123,13 @@ async function generateReceiptDocument(order: any): Promise<Buffer> {
     doc.setFontSize(10)
     let y = 180
     order.orderItems.forEach((item: any) => {
-      doc.text(`${item.product.name} - Qty: ${item.quantity} - ₦${item.totalPrice}`, 20, y)
+      doc.text(`${item.product.name} - Qty: ${item.quantity} - NGN ${item.totalPrice}`, 20, y)
       y += 10
     })
     
     // Total
     doc.setFontSize(14)
-    doc.text(`Total: ₦${Number(order.totalAmount).toLocaleString()}`, 20, y + 20)
+    doc.text(`Total: NGN ${Number(order.totalAmount).toLocaleString()}`, 20, y + 20)
     
     // Footer
     doc.setFontSize(8)

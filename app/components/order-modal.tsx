@@ -276,7 +276,7 @@ export default function OrderModal({ isOpen, onClose, onSave }: OrderModalProps)
                     required
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div>
@@ -311,7 +311,7 @@ export default function OrderModal({ isOpen, onClose, onSave }: OrderModalProps)
                     required
                     value={customerInfo.address}
                     onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function OrderModal({ isOpen, onClose, onSave }: OrderModalProps)
                   placeholder="Search products by name, SKU, or category..."
                   value={productSearchTerm}
                   onChange={(e) => setProductSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 

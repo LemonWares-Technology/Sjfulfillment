@@ -15,14 +15,12 @@ interface ExportModalProps {
 }
 
 const EXPORT_FORMATS = [
-  { value: 'excel', label: 'Excel (.xlsx)', icon: TableCellsIcon, description: 'Spreadsheet format for data analysis' },
-  { value: 'pdf', label: 'PDF (.pdf)', icon: DocumentIcon, description: 'Document format for sharing' },
-  { value: 'csv', label: 'CSV (.csv)', icon: TableCellsIcon, description: 'Simple text format for import' }
+  { value: 'pdf', label: 'PDF (.pdf)', icon: DocumentIcon, description: 'Document format for sharing and printing' }
 ]
 
 export default function ExportModal({ isOpen, onClose, type, selectedItems = [], filters = {}, title }: ExportModalProps) {
   const { get, loading } = useApi()
-  const [selectedFormat, setSelectedFormat] = useState('excel')
+  const [selectedFormat, setSelectedFormat] = useState('pdf')
   const [includeImages, setIncludeImages] = useState(false)
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -161,7 +159,7 @@ export default function ExportModal({ isOpen, onClose, type, selectedItems = [],
               </label>
               <div className="space-y-2">
                 {EXPORT_FORMATS.map((format) => (
-                  <label key={format.value} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
+                  <label key={format.value} className="flex items-start space-x-3 p-3 border-2 border-amber-500 bg-amber-50 rounded-md">
                     <input
                       type="radio"
                       name="format"
@@ -172,31 +170,17 @@ export default function ExportModal({ isOpen, onClose, type, selectedItems = [],
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <format.icon className="h-4 w-4 text-gray-400" />
+                        <format.icon className="h-4 w-4 text-amber-600" />
                         <span className="text-sm font-medium text-gray-900">{format.label}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">{format.description}</p>
+                      <p className="text-xs text-gray-600 mt-1">{format.description}</p>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Additional Options */}
-            {type === 'products' && (
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="includeImages"
-                  checked={includeImages}
-                  onChange={(e) => setIncludeImages(e.target.checked)}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 mr-2"
-                />
-                <label htmlFor="includeImages" className="text-sm text-gray-700">
-                  Include product images (Excel only)
-                </label>
-              </div>
-            )}
+            {/* Additional Options - Removed as images are not applicable to PDF */}
 
             {/* Export Button */}
             <div className="flex justify-end space-x-3 pt-4">

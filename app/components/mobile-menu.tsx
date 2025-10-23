@@ -210,7 +210,7 @@ export default function MobileMenu() {
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setIsOpen(false)} />
           
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+          <div className="relative flex flex-col h-full max-w-xs w-full bg-[#0A0A0A]">
             <div className="absolute top-0 right-0 -mr-12 pt-2">
               <button
                 onClick={() => setIsOpen(false)}
@@ -220,18 +220,13 @@ export default function MobileMenu() {
               </button>
             </div>
             
-            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-              <div className="flex-shrink-0 flex items-center px-4">
-                <div className="h-8 w-8 bg-black rounded-lg flex items-center justify-center">
-                  <img 
-                    src="https://sjfulfillment.com/wp-content/uploads/2020/09/cropped-Main-Logo-white-886x.png"
-                    alt="SJF Logo"
-                    className="h-6 w-6 object-contain"
-                  />
-                </div>
-                <span className="ml-2 text-xl font-semibold text-gray-900">
-                  SJFulfillment
-                </span>
+            <div className="flex-1 pt-5 pb-4 overflow-y-auto">
+              <div className="flex-shrink-0 flex items-center justify-center px-4">
+                <img 
+                  src="https://sjfulfillment.com/wp-content/uploads/2020/09/cropped-Main-Logo-white-886x.png"
+                  alt="SJF Logo"
+                  className="h-12 w-auto object-contain"
+                />
               </div>
               
               <nav className="mt-5 px-2 space-y-1">
@@ -246,13 +241,13 @@ export default function MobileMenu() {
                       onClick={() => setIsOpen(false)}
                       className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
                         isActive
-                          ? 'bg-amber-100 text-amber-900'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-[#f08c17] text-white'
+                          : 'text-white/70 hover:bg-white/10 hover:text-white'
                       }`}
                     >
                       <item.icon
                         className={`mr-4 flex-shrink-0 h-6 w-6 ${
-                          isActive ? 'text-amber-500' : 'text-gray-400 group-hover:text-gray-500'
+                          isActive ? 'text-white' : 'text-white/50 group-hover:text-white/70'
                         }`}
                       />
                       {item.name}
@@ -262,20 +257,20 @@ export default function MobileMenu() {
               </nav>
             </div>
             
-            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex-shrink-0 flex border-t border-white/20 p-4">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-700">
+                  <div className="h-8 w-8 bg-[#f08c17] rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-white">
                       {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                     </span>
                   </div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className="text-sm font-medium text-white">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-white/70">
                     {user.role.replace('_', ' ')}
                   </p>
                 </div>

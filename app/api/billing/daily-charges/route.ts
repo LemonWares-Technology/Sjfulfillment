@@ -49,30 +49,15 @@ export const GET = withRole(['MERCHANT_ADMIN', 'MERCHANT_STAFF'], async (request
 
     const totalDailyCharge = dailyCharges.reduce((sum, charge) => sum + charge.totalDailyCharge, 0)
 
-    // Get accumulated charges for the current month
-    const startOfMonth = new Date(date)
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-
-    const endOfMonth = new Date(date)
-    endOfMonth.setMonth(endOfMonth.getMonth() + 1)
-    endOfMonth.setDate(0)
-    endOfMonth.setHours(23, 59, 59, 999)
-
-    const monthlyBillingRecords = await prisma.billingRecord.findMany({
+    // Get accumulated charges (all billing records regardless of type or status)
+    const allBillingRecords = await prisma.billingRecord.findMany({
       where: {
-        merchantId: user.merchantId,
-        billingType: 'DAILY_SERVICE_FEE',
-        dueDate: {
-          gte: startOfMonth,
-          lte: endOfMonth
-        },
-        status: 'PENDING'
+        merchantId: user.merchantId
       },
       orderBy: { dueDate: 'desc' }
     })
 
-    const accumulatedCharges = monthlyBillingRecords.reduce((sum, record) => sum + Number(record.amount), 0)
+    const accumulatedCharges = allBillingRecords.reduce((sum, record) => sum + Number(record.amount), 0)
 
     return createResponse({
       date,

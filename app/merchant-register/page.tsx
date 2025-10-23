@@ -195,7 +195,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={merchantData.businessName}
                     onChange={(e) => setMerchantData({ ...merchantData, businessName: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessName ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessName ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Your business name"
                   />
@@ -209,7 +209,7 @@ export default function MerchantRegistrationPage() {
                   <select
                     value={merchantData.businessType}
                     onChange={(e) => setMerchantData({ ...merchantData, businessType: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessType ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessType ? 'border-red-500' : 'border-gray-300'
                       }`}
                   >
                     <option value="">Select business type</option>
@@ -239,7 +239,7 @@ export default function MerchantRegistrationPage() {
                     type="email"
                     value={merchantData.businessEmail}
                     onChange={(e) => setMerchantData({ ...merchantData, businessEmail: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessEmail ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessEmail ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="business@example.com"
                   />
@@ -254,7 +254,7 @@ export default function MerchantRegistrationPage() {
                     type="tel"
                     value={merchantData.businessPhone}
                     onChange={(e) => setMerchantData({ ...merchantData, businessPhone: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessPhone ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.businessPhone ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="+234 800 000 0000"
                   />
@@ -269,7 +269,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={merchantData.contactPerson}
                     onChange={(e) => setMerchantData({ ...merchantData, contactPerson: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.contactPerson ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.contactPerson ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Full name of contact person"
                   />
@@ -284,7 +284,7 @@ export default function MerchantRegistrationPage() {
                     value={merchantData.address}
                     onChange={(e) => setMerchantData({ ...merchantData, address: e.target.value })}
                     rows={3}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.address ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.address ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Complete business address"
                   />
@@ -299,7 +299,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={merchantData.city}
                     onChange={(e) => setMerchantData({ ...merchantData, city: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="City"
                   />
@@ -313,7 +313,7 @@ export default function MerchantRegistrationPage() {
                   <select
                     value={merchantData.state}
                     onChange={(e) => setMerchantData({ ...merchantData, state: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.state ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.state ? 'border-red-500' : 'border-gray-300'
                       }`}
                   >
                     <option value="">Select state</option>
@@ -332,7 +332,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={merchantData.cacNumber}
                     onChange={(e) => setMerchantData({ ...merchantData, cacNumber: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                     placeholder="RC Number (optional)"
                   />
                 </div>
@@ -345,7 +345,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={merchantData.taxId}
                     onChange={(e) => setMerchantData({ ...merchantData, taxId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                     placeholder="Tax ID (optional)"
                   />
                 </div>
@@ -380,7 +380,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={userData.firstName}
                     onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.firstName ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.firstName ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Your first name"
                   />
@@ -395,7 +395,7 @@ export default function MerchantRegistrationPage() {
                     type="text"
                     value={userData.lastName}
                     onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.lastName ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.lastName ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Your last name"
                   />
@@ -410,7 +410,7 @@ export default function MerchantRegistrationPage() {
                     type="email"
                     value={userData.email}
                     onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.email ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.email ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="your@email.com"
                   />
@@ -425,7 +425,7 @@ export default function MerchantRegistrationPage() {
                     type="tel"
                     value={userData.phone}
                     onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="+234 800 000 0000"
                   />
@@ -440,7 +440,7 @@ export default function MerchantRegistrationPage() {
                     type="password"
                     value={userData.password}
                     onChange={(e) => setUserData({ ...userData, password: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.password ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.password ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Minimum 8 characters"
                   />
@@ -455,7 +455,7 @@ export default function MerchantRegistrationPage() {
                     type="password"
                     value={userData.confirmPassword}
                     onChange={(e) => setUserData({ ...userData, confirmPassword: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-3 py-2 border rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                       }`}
                     placeholder="Confirm your password"
                   />

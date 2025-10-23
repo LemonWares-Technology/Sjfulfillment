@@ -377,14 +377,14 @@ export default function ChangePasswordPage() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
-                type="password" placeholder="Enter your password" className="w-full outline-none placeholder:text-white border border-[#F08C17] px-4 bg-white/40 h-[45px] rounded-[5px]" />
+                type="password" placeholder="Enter your password" className="w-full outline-none placeholder:text-white border border-[#F08C17] px-4 bg-white/40 h-[45px] rounded-[5px] text-white" />
             </div>
             <div className="mt-4">
               <p className="text-[14px] tracking-wide font-semibold mb-1">New Password</p>
               <input
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                type="password" placeholder="Enter New Password" className="w-full outline-none placeholder:text-white border border-[#F08C17] px-4 bg-white/40 h-[45px] rounded-[5px]" />
+                type="password" placeholder="Enter New Password" className="w-full outline-none placeholder:text-white border border-[#F08C17] px-4 bg-white/40 h-[45px] rounded-[5px] text-white" />
             </div>
             <p className="text-[13px] my-2">Please add all necessary characters to create a safe password.</p>
 
@@ -405,7 +405,7 @@ export default function ChangePasswordPage() {
               <input
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                type="password" placeholder="Enter your confirmed new password" className="w-full outline-none placeholder:text-white border border-[#F08C17] px-4 bg-white/40 h-[45px] rounded-[5px]" />
+                type="password" placeholder="Enter your confirmed new password" className="w-full outline-none placeholder:text-white border border-[#F08C17] px-4 bg-white/40 h-[45px] rounded-[5px] text-white" />
             </div>
 
             <button

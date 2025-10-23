@@ -3,6 +3,7 @@ import { JWTPayload } from '@/app/lib/auth'
 import { createErrorResponse, withRole } from '@/app/lib/api-utils'
 import { prisma } from '@/app/lib/prisma'
 import jsPDF from 'jspdf'
+import { logoBase64 } from '@/app/lib/logo-base64'
 
 // GET /api/export
 export const GET = withRole(['SJFS_ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_STAFF'], async (request: NextRequest, user: JWTPayload): Promise<NextResponse> => {
@@ -331,19 +332,360 @@ async function generateExcelFile(data: any[], filename: string, type: string): P
 
 async function generatePDFFile(data: any[], filename: string, type: string): Promise<NextResponse> {
   const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
   
-  // Title
-  doc.setFontSize(20)
-  doc.text(`${type} Export`, 20, 20)
+  // HEADER - Brand Banner
+  doc.setFillColor(10, 10, 10) // black header for white logo
+  doc.rect(0, 0, pageWidth, 35, 'F')
+
+  // Add logo instead of text
+  try {
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', pageWidth / 2 - 20, 8, 40, 18)
+    } else {
+      // fallback to previous remote url if base64 not available
+      doc.addImage('https://sjfulfillment.com/wp-content/uploads/2020/09/cropped-Main-Logo-white-886x.png', 'PNG', pageWidth / 2 - 20, 8, 40, 18)
+    }
+  } catch (error) {
+    // Fallback to text if logo fails to load
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('SJFulfillment', pageWidth / 2, 18, { align: 'center' })
+  }
   
-  // Data
-  doc.setFontSize(10)
-  let y = 40
-  data.slice(0, 50).forEach((item: any) => {
-    const text = JSON.stringify(item, null, 2).substring(0, 100) + '...'
-    doc.text(text, 20, y)
-    y += 10
-  })
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`${type.charAt(0).toUpperCase() + type.slice(1)} Export Report`, pageWidth / 2, 32, { align: 'center' })
+  
+  // Report metadata
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(9)
+  doc.text(`Generated: ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}`, 20, 45)
+  doc.text(`Total Records: ${data.length}`, 20, 50)
+  
+  doc.setDrawColor(240, 140, 23)
+  doc.setLineWidth(0.5)
+  doc.line(20, 54, pageWidth - 20, 54)
+  
+  let yPos = 62
+  
+  // Type-specific formatting
+  if (type === 'orders') {
+    // Calculate summary stats
+    const totalRevenue = data.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)
+    const avgOrderValue = data.length > 0 ? totalRevenue / data.length : 0
+    const statusCounts: any = {}
+    data.forEach(order => {
+      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1
+    })
+    
+    // Summary Box
+    doc.setFillColor(245, 245, 245)
+    doc.roundedRect(15, yPos, pageWidth - 30, 30, 3, 3, 'F')
+    
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(240, 140, 23)
+    doc.text('Orders Summary', 20, yPos + 10)
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Total Orders: ${data.length}`, 25, yPos + 18)
+    doc.text(`Total Revenue: NGN ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 25, yPos + 24)
+    doc.text(`Avg Order Value: NGN ${avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 120, yPos + 18)
+    doc.text(`Delivered: ${statusCounts.DELIVERED || 0} | Pending: ${statusCounts.PENDING || 0}`, 120, yPos + 24)
+    
+    yPos += 38
+    
+    // Table Header
+    doc.setFillColor(240, 140, 23)
+    doc.rect(15, yPos, pageWidth - 30, 8, 'F')
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text('Order #', 18, yPos + 5.5)
+    doc.text('Customer', 50, yPos + 5.5)
+    doc.text('Status', 100, yPos + 5.5)
+    doc.text('Amount', 130, yPos + 5.5)
+    doc.text('Date', 165, yPos + 5.5)
+    
+    yPos += 8
+    
+    // Order rows
+    data.forEach((order, index) => {
+      if (yPos > pageHeight - 30) {
+        doc.addPage()
+        
+        // Header on new page
+        doc.setFillColor(240, 140, 23)
+        doc.rect(0, 0, pageWidth, 20, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(14)
+        doc.text(`SJFulfillment - ${type} Export (cont.)`, pageWidth / 2, 12, { align: 'center' })
+        
+        yPos = 30
+        
+        // Repeat table header
+        doc.setFillColor(240, 140, 23)
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F')
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'bold')
+        doc.text('Order #', 18, yPos + 5.5)
+        doc.text('Customer', 50, yPos + 5.5)
+        doc.text('Status', 100, yPos + 5.5)
+        doc.text('Amount', 130, yPos + 5.5)
+        doc.text('Date', 165, yPos + 5.5)
+        yPos += 8
+      }
+      
+      const bgColor = index % 2 === 0 ? [250, 250, 250] : [255, 255, 255]
+      doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
+      doc.rect(15, yPos, pageWidth - 30, 7, 'F')
+      
+      doc.setFontSize(7)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
+      doc.text((order.orderNumber || order.id || 'N/A').toString().substring(0, 12), 18, yPos + 4.5)
+      doc.text((order.customerName || 'Unknown').toString().substring(0, 18), 50, yPos + 4.5)
+      
+      // Status with color
+      const statusColor = order.status === 'DELIVERED' ? [34, 197, 94] : 
+                         order.status === 'PENDING' ? [251, 191, 36] : 
+                         order.status === 'CANCELLED' ? [239, 68, 68] : [100, 100, 100]
+      doc.setTextColor(statusColor[0], statusColor[1], statusColor[2])
+      doc.setFont('helvetica', 'bold')
+      doc.text(order.status || 'N/A', 100, yPos + 4.5)
+      
+      doc.setTextColor(0, 128, 0)
+      doc.text(`NGN ${Number(order.totalAmount || 0).toLocaleString()}`, 130, yPos + 4.5)
+      
+      doc.setTextColor(100, 100, 100)
+      doc.setFont('helvetica', 'normal')
+      doc.text(new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }), 165, yPos + 4.5)
+      
+      yPos += 7
+    })
+    
+  } else if (type === 'products') {
+    // Summary Box
+    const activeProducts = data.filter(p => p.isActive).length
+    const totalStock = data.reduce((sum, p) => sum + (p.totalStock || 0), 0)
+    const avgPrice = data.length > 0 ? data.reduce((sum, p) => sum + Number(p.price || 0), 0) / data.length : 0
+    
+    doc.setFillColor(245, 245, 245)
+    doc.roundedRect(15, yPos, pageWidth - 30, 30, 3, 3, 'F')
+    
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(240, 140, 23)
+    doc.text('Products Summary', 20, yPos + 10)
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Total Products: ${data.length}`, 25, yPos + 18)
+    doc.text(`Active: ${activeProducts} | Inactive: ${data.length - activeProducts}`, 25, yPos + 24)
+    doc.text(`Active Products: ${activeProducts} of ${data.length}`, 25, yPos + 18)
+    doc.text(`Total Stock: ${totalStock.toLocaleString()} units`, 25, yPos + 24)
+    doc.text(`Avg Price: NGN ${avgPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 120, yPos + 24)
+    
+    yPos += 38
+    
+    // Table Header
+    doc.setFillColor(240, 140, 23)
+    doc.rect(15, yPos, pageWidth - 30, 8, 'F')
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text('Product Name', 18, yPos + 5.5)
+    doc.text('SKU', 80, yPos + 5.5)
+    doc.text('Price', 115, yPos + 5.5)
+    doc.text('Stock', 145, yPos + 5.5)
+    doc.text('Merchant', 165, yPos + 5.5)
+    
+    yPos += 8
+    
+    // Product rows
+    data.forEach((product, index) => {
+      if (yPos > pageHeight - 30) {
+        doc.addPage()
+        
+        doc.setFillColor(240, 140, 23)
+        doc.rect(0, 0, pageWidth, 20, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(14)
+        doc.text(`SJFulfillment - Products Export (cont.)`, pageWidth / 2, 12, { align: 'center' })
+        
+        yPos = 30
+        
+        doc.setFillColor(240, 140, 23)
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F')
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'bold')
+        doc.text('Product Name', 18, yPos + 5.5)
+        doc.text('SKU', 80, yPos + 5.5)
+        doc.text('Price', 115, yPos + 5.5)
+        doc.text('Stock', 145, yPos + 5.5)
+        doc.text('Merchant', 165, yPos + 5.5)
+        yPos += 8
+      }
+      
+      const bgColor = index % 2 === 0 ? [250, 250, 250] : [255, 255, 255]
+      doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
+      doc.rect(15, yPos, pageWidth - 30, 7, 'F')
+      
+      doc.setFontSize(7)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
+      doc.text((product.name || 'Unnamed').toString().substring(0, 25), 18, yPos + 4.5)
+      doc.text((product.sku || 'N/A').toString().substring(0, 12), 80, yPos + 4.5)
+      
+      doc.setTextColor(0, 128, 0)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`NGN ${Number(product.price || 0).toLocaleString()}`, 115, yPos + 4.5)
+      
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
+      const stockColor = (product.totalStock || 0) > 10 ? [34, 197, 94] : (product.totalStock || 0) > 0 ? [251, 191, 36] : [239, 68, 68]
+      doc.setTextColor(stockColor[0], stockColor[1], stockColor[2])
+      doc.text(`${product.totalStock || 0}`, 145, yPos + 4.5)
+      
+      doc.setTextColor(100, 100, 100)
+      doc.text((product.merchantName || 'N/A').toString().substring(0, 15), 165, yPos + 4.5)
+      
+      yPos += 7
+    })
+    
+  } else if (type === 'returns') {
+    // Summary
+    const totalRefunds = data.reduce((sum, r) => sum + Number(r.refundAmount || 0), 0)
+    const statusCounts: any = {}
+    data.forEach(ret => {
+      statusCounts[ret.status] = (statusCounts[ret.status] || 0) + 1
+    })
+    
+    doc.setFillColor(245, 245, 245)
+    doc.roundedRect(15, yPos, pageWidth - 30, 30, 3, 3, 'F')
+    
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(240, 140, 23)
+    doc.text('Returns Summary', 20, yPos + 10)
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Total Returns: ${data.length}`, 25, yPos + 18)
+    doc.text(`Total Refunds: NGN ${totalRefunds.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 25, yPos + 24)
+    doc.text(`Approved: ${statusCounts.APPROVED || 0} | Pending: ${statusCounts.PENDING || 0}`, 120, yPos + 18)
+    doc.text(`Processed: ${statusCounts.PROCESSED || 0} | Rejected: ${statusCounts.REJECTED || 0}`, 120, yPos + 24)
+    
+    yPos += 38
+    
+    // Table Header
+    doc.setFillColor(240, 140, 23)
+    doc.rect(15, yPos, pageWidth - 30, 8, 'F')
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text('Order #', 18, yPos + 5.5)
+    doc.text('Reason', 55, yPos + 5.5)
+    doc.text('Status', 110, yPos + 5.5)
+    doc.text('Refund', 140, yPos + 5.5)
+    doc.text('Date', 170, yPos + 5.5)
+    
+    yPos += 8
+    
+    // Return rows
+    data.forEach((ret, index) => {
+      if (yPos > pageHeight - 30) {
+        doc.addPage()
+        doc.setFillColor(240, 140, 23)
+        doc.rect(0, 0, pageWidth, 20, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(14)
+        doc.text(`SJFulfillment - Returns Export (cont.)`, pageWidth / 2, 12, { align: 'center' })
+        yPos = 30
+      }
+      
+      const bgColor = index % 2 === 0 ? [250, 250, 250] : [255, 255, 255]
+      doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
+      doc.rect(15, yPos, pageWidth - 30, 7, 'F')
+      
+      doc.setFontSize(7)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
+      doc.text((ret.orderNumber || ret.orderId || 'N/A').toString().substring(0, 12), 18, yPos + 4.5)
+      doc.text((ret.reason || 'N/A').toString().substring(0, 20), 55, yPos + 4.5)
+      
+      const statusColor = ret.status === 'APPROVED' ? [34, 197, 94] : 
+                         ret.status === 'PENDING' ? [251, 191, 36] : 
+                         ret.status === 'REJECTED' ? [239, 68, 68] : [100, 100, 100]
+      doc.setTextColor(statusColor[0], statusColor[1], statusColor[2])
+      doc.setFont('helvetica', 'bold')
+      doc.text(ret.status || 'N/A', 110, yPos + 4.5)
+      
+      doc.setTextColor(0, 128, 0)
+      doc.text(`NGN ${Number(ret.refundAmount || 0).toLocaleString()}`, 140, yPos + 4.5)
+      
+      doc.setTextColor(100, 100, 100)
+      doc.setFont('helvetica', 'normal')
+      doc.text(new Date(ret.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), 170, yPos + 4.5)
+      
+      yPos += 7
+    })
+  } else {
+    // Generic format for other types
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(240, 140, 23)
+    doc.text(`📋 ${type.toUpperCase()} Records`, 20, yPos)
+    yPos += 10
+    
+    data.slice(0, 100).forEach((item, index) => {
+      if (yPos > pageHeight - 30) {
+        doc.addPage()
+        doc.setFillColor(240, 140, 23)
+        doc.rect(0, 0, pageWidth, 20, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(14)
+        doc.text(`SJFulfillment - ${type} Export (cont.)`, pageWidth / 2, 12, { align: 'center' })
+        yPos = 30
+      }
+      
+      doc.setFontSize(8)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Record ${index + 1}:`, 20, yPos)
+      yPos += 5
+      
+      const entries = Object.entries(item).slice(0, 5)
+      doc.setFont('helvetica', 'normal')
+      entries.forEach(([key, value]) => {
+        if (yPos > pageHeight - 30) {
+          doc.addPage()
+          yPos = 20
+        }
+        doc.text(`  ${key}: ${String(value).substring(0, 60)}`, 22, yPos)
+        yPos += 4
+      })
+      yPos += 3
+    })
+  }
+  
+  // Footer on all pages
+  const pageCount = doc.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFontSize(7)
+    doc.setTextColor(150, 150, 150)
+    doc.text('SJFulfillment © 2025 - Powered by Advanced Technology', pageWidth / 2, pageHeight - 8, { align: 'center' })
+    doc.text(`Page ${i} of ${pageCount} | Confidential Document`, pageWidth / 2, pageHeight - 4, { align: 'center' })
+  }
   
   const buffer = Buffer.from(doc.output('arraybuffer'))
   

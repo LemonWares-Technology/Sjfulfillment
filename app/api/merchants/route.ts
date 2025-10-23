@@ -77,14 +77,12 @@ export const GET = withRole(
 
       // Calculate accumulated charges for each merchant
       const merchantsWithCharges = merchants.map(merchant => {
-        // Only include DAILY_SERVICE_FEE charges
-        const serviceCharges = merchant.billingRecords.filter(
-          record => record.billingType === 'DAILY_SERVICE_FEE'
-        );
-        const totalCharges = serviceCharges.reduce((sum, record) => sum + Number(record.amount), 0);
-        const paidCharges = serviceCharges.filter(r => r.status === 'PAID').reduce((sum, r) => sum + Number(r.amount), 0);
-        const pendingCharges = serviceCharges.filter(r => r.status === 'PENDING').reduce((sum, r) => sum + Number(r.amount), 0);
-        const overdueCharges = serviceCharges.filter(r => r.status === 'OVERDUE').reduce((sum, r) => sum + Number(r.amount), 0);
+        // Include ALL billing records (consistent with individual merchant detail)
+        const allCharges = merchant.billingRecords;
+        const totalCharges = allCharges.reduce((sum, record) => sum + Number(record.amount), 0);
+        const paidCharges = allCharges.filter(r => r.status === 'PAID').reduce((sum, r) => sum + Number(r.amount), 0);
+        const pendingCharges = allCharges.filter(r => r.status === 'PENDING').reduce((sum, r) => sum + Number(r.amount), 0);
+        const overdueCharges = allCharges.filter(r => r.status === 'OVERDUE').reduce((sum, r) => sum + Number(r.amount), 0);
         return {
           ...merchant,
           accumulatedCharges: {
